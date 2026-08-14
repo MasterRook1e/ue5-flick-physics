@@ -1,43 +1,49 @@
 # UE5 Flick Physics
 
-A small, game-agnostic Unreal Engine C++ plugin for **drag-to-launch / flick physics**.
+A small, game-agnostic Unreal Engine C++ plugin for **drag-to-launch / flick physics** and ballistic preview sampling.
 
 The plugin converts a world-space drag gesture into a deterministic launch direction,
-normalized power value, and physical impulse. It also includes a reusable aim-session
-component that can apply the impulse to any simulating `UPrimitiveComponent`.
+power value, clamped preview cursor, and physical impulse. It also includes a reusable
+aim-session component and a pure trajectory sampler.
+
+> **Status:** alpha. The code is structured for Unreal Engine 5 and includes Automation
+> Tests, but a public engine-build compatibility matrix is still being established.
 
 ## Why this repository exists
 
 Flick interactions appear in tabletop-inspired games, physics puzzlers, sports games,
-mobile games, and prototypes. The underlying launch mechanic is useful independently
-from any one game's units, factions, levels, combat rules, progression, or content.
+mobile games, and prototypes. The underlying mechanic is useful independently from any
+one game's units, factions, levels, combat rules, progression, or content.
 
 This repository intentionally contains **only the generic mechanic**.
 
 ## Features
 
 - Pure deterministic launch math with no world or gameplay dependency
-- Configurable maximum drag distance
+- Configurable drag dead zone
 - Configurable minimum / maximum impulse
+- Configurable nonlinear power response
 - Arbitrary launch plane projection (XY, XZ, YZ, or custom)
+- Clamped preview cursor and effective drag distance
 - Optional mass-compensated impulse
 - Reusable `UFlickPhysicsLaunchComponent`
-- Blueprint-accessible pure calculation
+- Pure ballistic trajectory sampling
+- Blueprint-accessible calculations
 - Blueprint delegates for aim updates and releases
-- Unreal Automation Tests for the math layer
+- Unreal Automation Tests for launch and trajectory math
+- Repository boundary validation in GitHub Actions
 - No art, maps, game data, characters, levels, or proprietary assets
 
 ## Requirements
 
 - Unreal Engine 5
-- C++ project
+- A C++ Unreal project
 
-The plugin was initially extracted and generalized from a UE 5.8 development workflow.
-It does not contain Unreal Engine source code.
+The plugin does not contain Unreal Engine source code.
 
 ## Installation
 
-Copy this repository into your project's plugin directory:
+Copy the repository into your project's plugin directory:
 
 ```text
 YourProject/
@@ -47,15 +53,17 @@ YourProject/
         └── Source/
 ```
 
-Then regenerate project files if necessary and build your editor target.
+Regenerate project files if necessary, build your editor target, and enable **Flick Physics** in the Plugins panel.
 
-## C++ example
+## C++ launch example
 
 ```cpp
 FFlickPhysicsLaunchSettings Settings;
 Settings.MaxDragDistance = 300.0f;
+Settings.MinDragDistance = 10.0f;
 Settings.MinLaunchImpulse = 0.0f;
 Settings.MaxLaunchImpulse = 10000.0f;
+Settings.PowerExponent = 1.35f;
 
 const FFlickPhysicsLaunchResult Launch = FFlickPhysicsLaunchMath::Calculate(
     AnchorWorldPosition,
@@ -68,6 +76,24 @@ if (Launch.bValid)
 }
 ```
 
+## C++ trajectory-preview example
+
+```cpp
+FFlickPhysicsTrajectorySettings PreviewSettings;
+PreviewSettings.Duration = 1.5f;
+PreviewSettings.SampleCount = 24;
+PreviewSettings.Acceleration = FVector(0.0f, 0.0f, -980.0f);
+
+const FFlickPhysicsTrajectoryResult Preview =
+    FFlickPhysicsTrajectoryMath::Sample(
+        StartWorldPosition,
+        InitialVelocity,
+        PreviewSettings);
+```
+
+The trajectory helper is collision-free by design. A consuming game can draw all points,
+or stop at the first result from its own line-trace policy.
+
 ## Component workflow
 
 1. Add `UFlickPhysicsLaunchComponent` to an actor.
@@ -77,22 +103,32 @@ if (Launch.bValid)
 5. Call `ReleaseToBody(PhysicsBody)` to apply the impulse.
 6. Or call `CancelAim()` to abort.
 
-The component deliberately does **not** decide whether the actor is allowed to move.
-Turn rules, ownership, cooldowns, stamina, faction logic, selection rules, and other
-gameplay policy belong in the consuming game.
+The component deliberately does **not** decide whether an actor is allowed to move.
+Turn rules, ownership, cooldowns, stamina, selection rules, and other gameplay policy
+belong in the consuming game.
 
 ## Tests
 
-The repository includes Unreal Automation Tests covering:
+The Unreal Automation Tests cover:
 
 - zero drag
-- half power interpolation
-- maximum power clamping
+- dead-zone behavior
+- linear and nonlinear power
+- maximum drag clamping
 - launch direction opposing the drag direction
 - arbitrary launch-plane projection
-- invalid input and reversed impulse ranges
+- invalid launch input
+- constant-velocity trajectory sampling
+- gravity trajectory sampling
+- invalid trajectory input
 
-Run them through Unreal's Automation Test framework using the `FlickPhysics` test prefix.
+Run them through Unreal's Automation Test framework using the `FlickPhysics` prefix.
+
+The repository also runs a dependency-free boundary validator on GitHub Actions:
+
+```bash
+python scripts/validate_repository.py
+```
 
 ## Design boundaries
 
@@ -109,9 +145,13 @@ This project will not include:
 
 That boundary is intentional: this repository is an engine-level utility, not a game.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Small, tested, game-agnostic improvements are welcome.
+
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE).
 
 Unreal Engine is a trademark or registered trademark of Epic Games, Inc.
 This project is not affiliated with or endorsed by Epic Games.
