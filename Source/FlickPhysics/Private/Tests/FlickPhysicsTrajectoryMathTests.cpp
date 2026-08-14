@@ -4,17 +4,17 @@
 
 #include "Misc/AutomationTest.h"
 
-namespace FlickPhysicsTrajectoryTests
+namespace FlickPhysicsTrajectoryRegressionTests
 {
-    constexpr float Tolerance = 0.001f;
+constexpr float Tolerance = 0.001f;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-    FFlickPhysicsTrajectoryConstantVelocityTest,
+    FFlickPhysicsTrajectoryConstantVelocityRegressionTest,
     "FlickPhysics.Trajectory.ConstantVelocity",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FFlickPhysicsTrajectoryConstantVelocityTest::RunTest(const FString& Parameters)
+bool FFlickPhysicsTrajectoryConstantVelocityRegressionTest::RunTest(const FString& Parameters)
 {
     FFlickPhysicsTrajectorySettings Settings;
     Settings.Duration = 2.0f;
@@ -27,18 +27,19 @@ bool FFlickPhysicsTrajectoryConstantVelocityTest::RunTest(const FString& Paramet
         Settings);
 
     TestTrue(TEXT("Trajectory is valid"), Result.bValid);
-    TestEqual(TEXT("Three points are returned"), Result.Points.Num(), 3);
-    TestTrue(TEXT("Middle point is at one second"), Result.Points[1].Equals(FVector(110.0f, 20.0f, 30.0f), FlickPhysicsTrajectoryTests::Tolerance));
-    TestTrue(TEXT("End point is at two seconds"), Result.Points[2].Equals(FVector(210.0f, 20.0f, 30.0f), FlickPhysicsTrajectoryTests::Tolerance));
+    TestEqual(TEXT("Point count"), Result.Points.Num(), 3);
+    TestEqual(TEXT("Velocity count"), Result.Velocities.Num(), 3);
+    TestTrue(TEXT("Middle point"), Result.Points[1].Equals(FVector(110.0f, 20.0f, 30.0f), FlickPhysicsTrajectoryRegressionTests::Tolerance));
+    TestTrue(TEXT("End point"), Result.Points[2].Equals(FVector(210.0f, 20.0f, 30.0f), FlickPhysicsTrajectoryRegressionTests::Tolerance));
     return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-    FFlickPhysicsTrajectoryGravityTest,
+    FFlickPhysicsTrajectoryGravityRegressionTest,
     "FlickPhysics.Trajectory.Gravity",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FFlickPhysicsTrajectoryGravityTest::RunTest(const FString& Parameters)
+bool FFlickPhysicsTrajectoryGravityRegressionTest::RunTest(const FString& Parameters)
 {
     FFlickPhysicsTrajectorySettings Settings;
     Settings.Duration = 1.0f;
@@ -51,16 +52,17 @@ bool FFlickPhysicsTrajectoryGravityTest::RunTest(const FString& Parameters)
         Settings);
 
     TestTrue(TEXT("Trajectory is valid"), Result.bValid);
-    TestTrue(TEXT("Ballistic end point matches analytical solution"), Result.Points.Last().Equals(FVector(10.0f, 0.0f, 50.0f), FlickPhysicsTrajectoryTests::Tolerance));
+    TestTrue(TEXT("Analytical endpoint"), Result.Points.Last().Equals(FVector(10.0f, 0.0f, 50.0f), FlickPhysicsTrajectoryRegressionTests::Tolerance));
+    TestTrue(TEXT("Analytical end velocity"), Result.Velocities.Last().Equals(FVector(10.0f, 0.0f, 0.0f), FlickPhysicsTrajectoryRegressionTests::Tolerance));
     return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-    FFlickPhysicsTrajectoryInvalidInputTest,
+    FFlickPhysicsTrajectoryInvalidInputRegressionTest,
     "FlickPhysics.Trajectory.InvalidInput",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FFlickPhysicsTrajectoryInvalidInputTest::RunTest(const FString& Parameters)
+bool FFlickPhysicsTrajectoryInvalidInputRegressionTest::RunTest(const FString& Parameters)
 {
     FFlickPhysicsTrajectorySettings Settings;
     Settings.Duration = 0.0f;
@@ -71,7 +73,7 @@ bool FFlickPhysicsTrajectoryInvalidInputTest::RunTest(const FString& Parameters)
         Settings);
 
     TestFalse(TEXT("Zero duration is invalid"), Result.bValid);
-    TestEqual(TEXT("Invalid trajectory has no points"), Result.Points.Num(), 0);
+    TestEqual(TEXT("Invalid result has no points"), Result.Points.Num(), 0);
     return true;
 }
 

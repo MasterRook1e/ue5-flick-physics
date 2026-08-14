@@ -1,9 +1,9 @@
 {
   "FileVersion": 3,
-  "Version": 2,
-  "VersionName": "0.2.0",
+  "Version": 3,
+  "VersionName": "0.3.0",
   "FriendlyName": "Flick Physics",
-  "Description": "Game-agnostic drag-to-launch and trajectory-preview utilities for Unreal Engine 5.",
+  "Description": "Game-agnostic drag-to-launch, trajectory prediction, replay quantization, and stable-motion utilities for Unreal Engine 5.",
   "Category": "Physics",
   "CreatedBy": "MasterRook1e",
   "CanContainContent": false,
