@@ -1,10 +1,30 @@
-# Security Policy
+# Security policy
 
-This plugin does not handle credentials, networking, authentication, payments, or user data.
+Flick Physics does not handle accounts, credentials, payments, or network connections by
+itself. Security-relevant concerns include malformed numerical input, corrupted command
+packets, unsafe integration guidance, and accidental publication of private material.
 
-If you discover a security-relevant issue caused by this plugin, open a GitHub issue with
-a minimal reproduction unless disclosure would create immediate risk. In that case,
-contact the maintainer privately before publishing exploit details.
+## Supported versions
 
-Never include project secrets, API keys, private repository content, or proprietary assets
-in bug reports.
+Security fixes are applied to the latest source on `main` while the project is pre-1.0.
+Version-specific support begins after the first engine-verified release.
+
+## Reporting
+
+For an issue that can be disclosed safely, open a minimal GitHub issue without private
+source, credentials, or exploit secrets. For accidental private-content exposure or a
+vulnerability whose publication would create immediate risk, use GitHub's private
+security-reporting path when available.
+
+Include:
+
+- affected commit or version
+- minimal synthetic reproduction
+- expected and actual behavior
+- impact and preconditions
+- suggested mitigation when known
+
+The maintainer will acknowledge, triage, and communicate a remediation plan as repository
+availability permits. No fixed response-time SLA is promised.
+
+See `docs/THREAT_MODEL.md` for scope and explicit non-goals.

@@ -3,16 +3,20 @@
 #include "CoreMinimal.h"
 #include "FlickPhysicsTypes.h"
 
-/**
- * Pure ballistic trajectory sampling for previews.
- *
- * This helper intentionally performs no collision queries. Games can render
- * these points directly or stop the preview using their own trace policy.
- */
+/** Pure trajectory sampling and inverse target solving for previews. */
 struct FLICKPHYSICS_API FFlickPhysicsTrajectoryMath
 {
     static FFlickPhysicsTrajectoryResult Sample(
         const FVector& StartWorldPosition,
         const FVector& InitialVelocity,
+        const FFlickPhysicsTrajectorySettings& Settings);
+
+    /**
+     * Solves the initial velocity required to reach TargetWorldPosition after
+     * Settings.Duration under the same acceleration and damping model.
+     */
+    static FFlickPhysicsTargetSolveResult SolveInitialVelocity(
+        const FVector& StartWorldPosition,
+        const FVector& TargetWorldPosition,
         const FFlickPhysicsTrajectorySettings& Settings);
 };

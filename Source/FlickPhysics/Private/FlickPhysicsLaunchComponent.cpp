@@ -57,11 +57,9 @@ bool UFlickPhysicsLaunchComponent::ReleaseToBody(
         const float SafeReferenceMass = FMath::Max(
             Settings.ReferenceMassKg,
             UE_KINDA_SMALL_NUMBER);
-
         const float BodyMass = FMath::Max(
             PhysicsBody->GetMass(),
             UE_KINDA_SMALL_NUMBER);
-
         AppliedImpulse *= BodyMass / SafeReferenceMass;
     }
 
@@ -72,7 +70,6 @@ bool UFlickPhysicsLaunchComponent::ReleaseToBody(
     }
 
     const FFlickPhysicsLaunchResult Snapshot = CurrentLaunch;
-
     bIsAiming = false;
     AnchorPosition = FVector::ZeroVector;
     AimStartCursor = FVector::ZeroVector;
@@ -80,7 +77,6 @@ bool UFlickPhysicsLaunchComponent::ReleaseToBody(
 
     PhysicsBody->AddImpulse(AppliedImpulse, NAME_None, bVelocityChange);
     OnReleased.Broadcast(PhysicsBody, Snapshot);
-
     return true;
 }
 
@@ -94,8 +90,6 @@ void UFlickPhysicsLaunchComponent::CancelAim()
 
 void UFlickPhysicsLaunchComponent::Recalculate(const FVector& CursorWorldPosition)
 {
-    // Preserve the original "drag from where aiming began" interaction while
-    // keeping the component independent from any specific actor class.
     const FVector DragCursor =
         AnchorPosition + (CursorWorldPosition - AimStartCursor);
 

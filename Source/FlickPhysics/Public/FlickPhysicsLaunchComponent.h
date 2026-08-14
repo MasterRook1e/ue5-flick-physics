@@ -32,39 +32,36 @@ class FLICKPHYSICS_API UFlickPhysicsLaunchComponent : public UActorComponent
 public:
     UFlickPhysicsLaunchComponent();
 
-    UFUNCTION(BlueprintCallable, Category = "Flick Physics")
+    UFUNCTION(BlueprintCallable, Category = "Flick Physics|Launch")
     bool BeginAim(
         const FVector& AnchorWorldPosition,
         const FVector& CursorWorldPosition);
 
-    UFUNCTION(BlueprintCallable, Category = "Flick Physics")
+    UFUNCTION(BlueprintCallable, Category = "Flick Physics|Launch")
     bool UpdateAim(const FVector& CursorWorldPosition);
 
-    /**
-     * Applies the currently calculated impulse to any simulating primitive body.
-     * Returns false without modifying the body if the aim is invalid.
-     */
-    UFUNCTION(BlueprintCallable, Category = "Flick Physics")
+    /** Applies the current validated impulse to a simulating primitive body. */
+    UFUNCTION(BlueprintCallable, Category = "Flick Physics|Launch")
     bool ReleaseToBody(
         UPrimitiveComponent* PhysicsBody,
         bool bVelocityChange = false);
 
-    UFUNCTION(BlueprintCallable, Category = "Flick Physics")
+    UFUNCTION(BlueprintCallable, Category = "Flick Physics|Launch")
     void CancelAim();
 
-    UFUNCTION(BlueprintPure, Category = "Flick Physics")
+    UFUNCTION(BlueprintPure, Category = "Flick Physics|Launch")
     bool IsAiming() const { return bIsAiming; }
 
-    UFUNCTION(BlueprintPure, Category = "Flick Physics")
+    UFUNCTION(BlueprintPure, Category = "Flick Physics|Launch")
     FFlickPhysicsLaunchResult GetCurrentLaunch() const { return CurrentLaunch; }
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flick Physics")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flick Physics|Launch")
     FFlickPhysicsLaunchSettings Settings;
 
-    UPROPERTY(BlueprintAssignable, Category = "Flick Physics")
+    UPROPERTY(BlueprintAssignable, Category = "Flick Physics|Launch")
     FFlickPhysicsAimUpdatedSignature OnAimUpdated;
 
-    UPROPERTY(BlueprintAssignable, Category = "Flick Physics")
+    UPROPERTY(BlueprintAssignable, Category = "Flick Physics|Launch")
     FFlickPhysicsReleasedSignature OnReleased;
 
 private:
