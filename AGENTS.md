@@ -25,6 +25,7 @@ Read `README.md`, `docs/ARCHITECTURE.md`, `docs/THREAT_MODEL.md`, and
 
 ```bash
 python scripts/validate_repository.py
+python scripts/validate_unreal_harness.py
 cmake --preset portable-sanitized
 cmake --build --preset portable-sanitized
 ctest --preset portable-sanitized

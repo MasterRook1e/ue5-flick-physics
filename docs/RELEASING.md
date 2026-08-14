@@ -8,8 +8,8 @@ versions are reserved for compatible fixes and documentation.
 1. Update `VersionName` and numeric `Version` in `FlickPhysics.uplugin`.
 2. Update `project(... VERSION ...)` in `CMakeLists.txt`.
 3. Move user-visible changes from `Unreleased` into a versioned changelog section.
-4. Run repository validation, portable builds, tests, sanitizer configuration, install,
-   and external-consumer smoke test.
+4. Run repository and Unreal-harness validation, portable builds, tests, sanitizer
+   configuration, install, and external-consumer smoke test.
 5. Review the public boundary and generated package contents.
 6. Merge through a pull request with passing CI.
 7. Create an annotated `vMAJOR.MINOR.PATCH` tag.
@@ -19,14 +19,17 @@ source-only plugin archive. It does not publish a binary engine package.
 
 ## Engine-verified release gate
 
-A release may be described as verified for a named Unreal version only after:
+A release may be described as verified for a named Unreal version only after the public
+Windows harness has completed successfully:
 
-```text
-RunUAT BuildPlugin -Plugin=<path>/FlickPhysics.uplugin -Package=<outside-repo-output>
+```powershell
+scripts\verify_unreal_windows.ps1 -EngineRoot "D:\UE_5.8"
 ```
 
-and the `FlickPhysics` Automation Test prefix have both succeeded. Add the exact evidence
-to `docs/COMPATIBILITY.md` before attaching a packaged plugin or making a support claim.
+The harness invokes `RunUAT BuildPlugin`, creates a neutral temporary host, executes the
+`FlickPhysics` Automation Test prefix, and writes reviewed evidence outside the repository.
+Add the exact evidence to `docs/COMPATIBILITY.md` before attaching a packaged plugin or
+making a support claim. See `docs/UNREAL_VERIFICATION.md`.
 
 ## Reproducible source archive
 

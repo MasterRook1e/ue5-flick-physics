@@ -18,6 +18,16 @@ hard-coded here because hosted runner images change over time.
 
 ## Unreal Engine plugin
 
+Run the public verification harness on a Windows machine with the target engine:
+
+```powershell
+scripts\verify_unreal_windows.ps1 -EngineRoot "D:\UE_5.8"
+```
+
+The harness packages the plugin, creates a neutral temporary host, executes the
+`FlickPhysics` test prefix, and writes a summary outside the repository. See
+[UNREAL_VERIFICATION.md](UNREAL_VERIFICATION.md).
+
 | Engine | Platform | BuildPlugin | Automation Tests | Status |
 |---|---|---:|---:|---|
 | UE 5.8.x | Windows | pending | pending | not yet verified publicly |
