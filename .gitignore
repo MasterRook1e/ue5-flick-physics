@@ -1,0 +1,24 @@
+# Unreal generated directories
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# IDE
+.vs/
+.vscode/
+*.VC.db
+*.opensdf
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+
+# Python validation
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
