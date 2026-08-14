@@ -4,6 +4,17 @@ DerivedDataCache/
 Intermediate/
 Saved/
 
+# Portable CMake builds and install staging
+build/
+build-*/
+install/
+dist/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
+cmake_install.cmake
+
 # IDE
 .vs/
 .vscode/

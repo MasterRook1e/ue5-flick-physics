@@ -1,0 +1,57 @@
+name: Release readiness
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-package:
+    name: Verify and package source plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate repository
+        run: python scripts/validate_repository.py
+
+      - name: Check tag and plugin version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: python scripts/check_release_version.py "${GITHUB_REF_NAME}"
+
+      - name: Build and test portable core
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+          ctest --test-dir build --output-on-failure
+          cmake --install build --prefix install
+          cmake -S Tests/Consumer -B consumer-build -DCMAKE_PREFIX_PATH="${PWD}/install"
+          cmake --build consumer-build --parallel
+          ctest --test-dir consumer-build --output-on-failure
+
+      - name: Create deterministic source packages
+        run: |
+          python scripts/package_plugin.py --output dist/FlickPhysics-source.zip
+          python scripts/package_plugin.py --output dist/FlickPhysics-source-second.zip
+          cmp dist/FlickPhysics-source.zip dist/FlickPhysics-source-second.zip
+          sha256sum dist/FlickPhysics-source.zip > dist/FlickPhysics-source.zip.sha256
+
+      - name: Upload source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlickPhysics-source
+          path: |
+            dist/FlickPhysics-source.zip
+            dist/FlickPhysics-source.zip.sha256
+          if-no-files-found: error

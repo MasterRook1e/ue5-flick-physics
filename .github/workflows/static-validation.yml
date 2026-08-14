@@ -1,16 +1,18 @@
-name: Static validation
+name: CI
 
 on:
   push:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  validate:
+  repository-boundary:
+    name: Repository boundary
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -23,3 +25,61 @@ jobs:
 
       - name: Validate repository boundary
         run: python scripts/validate_repository.py
+
+      - name: Verify release versions
+        run: python scripts/check_release_version.py
+
+      - name: Verify deterministic source packaging
+        shell: bash
+        run: |
+          python scripts/package_plugin.py --output dist/package-a.zip
+          python scripts/package_plugin.py --output dist/package-b.zip
+          cmp dist/package-a.zip dist/package-b.zip
+
+  portable-core:
+    name: Portable core (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            sanitizers: ON
+          - os: windows-latest
+            sanitizers: OFF
+          - os: macos-latest
+            sanitizers: OFF
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure portable core
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DFLICK_PHYSICS_BUILD_BENCHMARKS=ON
+          -DFLICK_PHYSICS_ENABLE_SANITIZERS=${{ matrix.sanitizers }}
+
+      - name: Build portable core
+        run: cmake --build build --config Release --parallel
+
+      - name: Run portable tests
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Run CLI smoke test
+        run: ctest --test-dir build --build-config Release --output-on-failure -R FlickPhysicsCliSmoke
+
+      - name: Install CMake package
+        run: cmake --install build --config Release --prefix install
+
+      - name: Configure external consumer
+        run: >-
+          cmake -S Tests/Consumer -B consumer-build
+          "-DCMAKE_PREFIX_PATH=${{ github.workspace }}/install"
+
+      - name: Build external consumer
+        run: cmake --build consumer-build --config Release --parallel
+
+      - name: Run external consumer
+        run: ctest --test-dir consumer-build --build-config Release --output-on-failure
