@@ -1,0 +1,76 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "portable-release",
+      "displayName": "Portable core release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/portable-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FLICK_PHYSICS_BUILD_TESTS": "ON",
+        "FLICK_PHYSICS_BUILD_EXAMPLES": "ON",
+        "FLICK_PHYSICS_BUILD_BENCHMARKS": "OFF",
+        "FLICK_PHYSICS_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "portable-sanitized",
+      "displayName": "Portable core with ASan and UBSan",
+      "inherits": "portable-release",
+      "binaryDir": "${sourceDir}/build/portable-sanitized",
+      "cacheVariables": {
+        "FLICK_PHYSICS_ENABLE_SANITIZERS": "ON"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "portable-benchmark",
+      "displayName": "Portable core benchmark",
+      "inherits": "portable-release",
+      "binaryDir": "${sourceDir}/build/portable-benchmark",
+      "cacheVariables": {
+        "FLICK_PHYSICS_BUILD_BENCHMARKS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "portable-release",
+      "configurePreset": "portable-release"
+    },
+    {
+      "name": "portable-sanitized",
+      "configurePreset": "portable-sanitized"
+    },
+    {
+      "name": "portable-benchmark",
+      "configurePreset": "portable-benchmark"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "portable-release",
+      "configurePreset": "portable-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "portable-sanitized",
+      "configurePreset": "portable-sanitized",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
