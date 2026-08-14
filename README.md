@@ -1,49 +1,89 @@
 # UE5 Flick Physics
 
-A small, game-agnostic Unreal Engine C++ plugin for **drag-to-launch / flick physics** and ballistic preview sampling.
+[![CI](https://github.com/MasterRook1e/ue5-flick-physics/actions/workflows/static-validation.yml/badge.svg)](https://github.com/MasterRook1e/ue5-flick-physics/actions/workflows/static-validation.yml)
+[![CodeQL](https://github.com/MasterRook1e/ue5-flick-physics/actions/workflows/codeql.yml/badge.svg)](https://github.com/MasterRook1e/ue5-flick-physics/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-The plugin converts a world-space drag gesture into a deterministic launch direction,
-power value, clamped preview cursor, and physical impulse. It also includes a reusable
-aim-session component and a pure trajectory sampler.
+A source-only Unreal Engine 5 C++ plugin and header-only C++17 library for
+**drag-to-launch / flick interactions**.
 
-> **Status:** alpha. The code is structured for Unreal Engine 5 and includes Automation
-> Tests, but a public engine-build compatibility matrix is still being established.
+Flick Physics turns a world-space pointer drag into a validated launch command, then
+provides the geometry, trajectory, replay-packet, and motion-settling utilities commonly
+needed around that interaction. The numerical kernel is compiled and tested without
+Unreal Engine; the UE module exposes the same contracts through `FVector`, reflected
+structs, Blueprint functions, and an aim-session component.
 
-## Why this repository exists
+> **Project status:** `0.3.0` alpha. Portable-core builds and tests are automated across
+> Linux, Windows, and macOS. Unreal Automation Tests are included, but this repository
+> does not claim a named Unreal Engine version as verified until a public `BuildPlugin`
+> record is added to the compatibility matrix.
 
-Flick interactions appear in tabletop-inspired games, physics puzzlers, sports games,
-mobile games, and prototypes. The underlying mechanic is useful independently from any
-one game's units, factions, levels, combat rules, progression, or content.
+## What is included
 
-This repository intentionally contains **only the generic mechanic**.
+### Launch calculation
 
-## Features
+- arbitrary launch-plane projection
+- configurable dead zone and maximum drag
+- linear, power, smooth-step, and smoother-step response curves
+- optional angular direction snapping
+- clamped preview cursor and machine-readable rejection status
+- optional mass compensation when applying an impulse through the component
 
-- Pure deterministic launch math with no world or gameplay dependency
-- Configurable drag dead zone
-- Configurable minimum / maximum impulse
-- Configurable nonlinear power response
-- Arbitrary launch plane projection (XY, XZ, YZ, or custom)
-- Clamped preview cursor and effective drag distance
-- Optional mass-compensated impulse
-- Reusable `UFlickPhysicsLaunchComponent`
-- Pure ballistic trajectory sampling
-- Blueprint-accessible calculations
-- Blueprint delegates for aim updates and releases
-- Unreal Automation Tests for launch and trajectory math
-- Repository boundary validation in GitHub Actions
-- No art, maps, game data, characters, levels, or proprietary assets
+### Geometry and trajectory
 
-## Requirements
+- normalized ray/plane intersection for pointer-to-world projection
+- analytical trajectory sampling with constant acceleration
+- analytical exponential linear damping
+- inverse initial-velocity solve for a target and fixed duration
+- sampled positions and velocities for preview rendering
 
-- Unreal Engine 5
-- A C++ Unreal project
+### Replay and transport
 
-The plugin does not contain Unreal Engine source code.
+- fixed-width 16-bit direction and power quantization
+- documented six-byte, versioned big-endian packet
+- CRC-8 corruption detection
+- Unreal and Blueprint encode/decode wrappers
 
-## Installation
+The packet is a compact transport primitive, not authentication, encryption, or a
+cross-platform lockstep guarantee. See [the wire-format document](docs/WIRE_FORMAT.md).
 
-Copy the repository into your project's plugin directory:
+### Motion state
+
+- linear and angular speed caps
+- threshold-based moving/settled state
+- stable-duration hysteresis to avoid one-frame settling
+- explicit transition flags for downstream gameplay code
+
+### Engineering and maintenance
+
+- one header-only C++17 core with no Unreal dependency and no dynamic allocation
+- Unreal wrappers delegate to that same tested core instead of duplicating formulas
+- 50,000-case seeded property test plus focused regression tests
+- AddressSanitizer and UndefinedBehaviorSanitizer on Linux CI
+- CMake package install and external-consumer smoke test
+- CodeQL analysis, public-boundary validation, and deterministic source packaging
+- no maps, assets, characters, rules, progression, or other product-specific content
+
+## Architecture
+
+```text
+Source/FlickPhysics/Public/FlickPhysicsPortableCore.h
+                    │
+                    ├── CMake / CTest / CLI / benchmark
+                    │
+                    └── Unreal adapter
+                          ├── reflected result and settings types
+                          ├── Blueprint function library
+                          ├── aim-session actor component
+                          └── Unreal Automation Tests
+```
+
+The portable core is the source of truth for numerical behavior. See
+[Architecture](docs/ARCHITECTURE.md) and [Portable core](docs/PORTABLE_CORE.md).
+
+## Install as an Unreal plugin
+
+Copy or clone the repository into the host project's plugin directory:
 
 ```text
 YourProject/
@@ -53,105 +93,139 @@ YourProject/
         └── Source/
 ```
 
-Regenerate project files if necessary, build your editor target, and enable **Flick Physics** in the Plugins panel.
+Regenerate project files when required, build the editor target, and enable
+**Flick Physics** in the Plugins panel. Detailed integration guidance is in
+[docs/INTEGRATION.md](docs/INTEGRATION.md).
 
-## C++ launch example
+## Unreal C++ example
 
 ```cpp
 FFlickPhysicsLaunchSettings Settings;
 Settings.MaxDragDistance = 300.0f;
-Settings.MinDragDistance = 10.0f;
-Settings.MinLaunchImpulse = 0.0f;
+Settings.MinDragDistance = 12.0f;
+Settings.ResponseCurve = EFlickPhysicsResponseCurve::SmootherStep;
+Settings.MinLaunchImpulse = 500.0f;
 Settings.MaxLaunchImpulse = 10000.0f;
-Settings.PowerExponent = 1.35f;
+Settings.DirectionSnapDegrees = 15.0f;
 
 const FFlickPhysicsLaunchResult Launch = FFlickPhysicsLaunchMath::Calculate(
     AnchorWorldPosition,
     CursorWorldPosition,
     Settings);
 
-if (Launch.bValid)
+if (Launch.Status == EFlickPhysicsLaunchStatus::Valid)
 {
     PhysicsBody->AddImpulse(Launch.Impulse);
 }
 ```
 
-## C++ trajectory-preview example
+## Blueprint surface
+
+`UFlickPhysicsBlueprintLibrary` exposes pure nodes for:
+
+- calculating a launch
+- intersecting a ray with a plane
+- sampling a damped or undamped trajectory
+- solving an initial velocity for a target and duration
+- quantizing, encoding, decoding, and reconstructing a launch command
+- advancing the stable motion-state tracker
+
+`UFlickPhysicsLaunchComponent` owns an aim session and applies a validated impulse to any
+simulating `UPrimitiveComponent`. It deliberately does not decide whether an actor is
+allowed to move; selection, ownership, turns, cooldowns, and other policy stay in the host.
+
+## Use the portable C++17 core
 
 ```cpp
-FFlickPhysicsTrajectorySettings PreviewSettings;
-PreviewSettings.Duration = 1.5f;
-PreviewSettings.SampleCount = 24;
-PreviewSettings.Acceleration = FVector(0.0f, 0.0f, -980.0f);
+#include <FlickPhysicsPortableCore.h>
 
-const FFlickPhysicsTrajectoryResult Preview =
-    FFlickPhysicsTrajectoryMath::Sample(
-        StartWorldPosition,
-        InitialVelocity,
-        PreviewSettings);
+flickphysics::LaunchSettings settings;
+settings.MaxDragDistance = 300.0;
+settings.Curve = flickphysics::ResponseCurve::SmootherStep;
+
+const flickphysics::LaunchResult launch = flickphysics::CalculateLaunch(
+    {0.0, 0.0, 0.0},
+    {-150.0, 0.0, 0.0},
+    settings);
 ```
 
-The trajectory helper is collision-free by design. A consuming game can draw all points,
-or stop at the first result from its own line-trace policy.
+### Build and test
 
-## Component workflow
+```bash
+cmake --preset portable-release
+cmake --build --preset portable-release
+ctest --preset portable-release
+```
 
-1. Add `UFlickPhysicsLaunchComponent` to an actor.
-2. Call `BeginAim(AnchorWorldPosition, CursorWorldPosition)` when dragging starts.
-3. Call `UpdateAim(CursorWorldPosition)` while dragging.
-4. Read `GetCurrentLaunch()` to draw your own preview.
-5. Call `ReleaseToBody(PhysicsBody)` to apply the impulse.
-6. Or call `CancelAim()` to abort.
+A sanitizer preset is also provided:
 
-The component deliberately does **not** decide whether an actor is allowed to move.
-Turn rules, ownership, cooldowns, stamina, selection rules, and other gameplay policy
-belong in the consuming game.
+```bash
+cmake --preset portable-sanitized
+cmake --build --preset portable-sanitized
+ctest --preset portable-sanitized
+```
 
-## Tests
+### Install as a CMake package
 
-The Unreal Automation Tests cover:
+```bash
+cmake --install build/portable-release --prefix ./install
+```
 
-- zero drag
-- dead-zone behavior
-- linear and nonlinear power
-- maximum drag clamping
-- launch direction opposing the drag direction
-- arbitrary launch-plane projection
-- invalid launch input
-- constant-velocity trajectory sampling
-- gravity trajectory sampling
-- invalid trajectory input
+A consumer can then use:
 
-Run them through Unreal's Automation Test framework using the `FlickPhysics` prefix.
+```cmake
+find_package(FlickPhysicsPortableCore 0.3 CONFIG REQUIRED)
+target_link_libraries(my_target PRIVATE FlickPhysics::PortableCore)
+```
 
-The repository also runs a dependency-free boundary validator on GitHub Actions:
+CI compiles a separate consumer project against the installed package so the exported
+interface is tested from outside this repository.
+
+## Validation
 
 ```bash
 python scripts/validate_repository.py
+python scripts/check_release_version.py v0.3.0
+python scripts/package_plugin.py --output dist/FlickPhysics-source.zip
 ```
 
-## Design boundaries
+The validator checks the public/private boundary, plugin metadata, version agreement,
+secret patterns, generated files, Unreal generated-header ordering, and that UE wrappers
+continue delegating to the portable core.
 
-This project will not include:
+## Compatibility evidence
 
-- player/enemy or faction concepts
-- characters or units
-- combat or damage
-- levels or maps
-- progression or economy
-- game-specific tuning tables
-- proprietary art/audio
-- private product source code
+Portable C++ compatibility is automated. Unreal compatibility requires a named engine,
+platform, `RunUAT BuildPlugin` output, and Automation Test result before it is recorded.
+See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md). This distinction is intentional: test
+source in a repository is not the same thing as an executed engine build.
 
-That boundary is intentional: this repository is an engine-level utility, not a game.
+## Project boundary
 
-## Contributing
+This repository will not contain:
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Small, tested, game-agnostic improvements are welcome.
+- characters, factions, combat, turns, abilities, levels, or progression
+- product-specific balance or tuning tables
+- proprietary art, audio, maps, or Unreal Engine source
+- credentials, private configuration, or private product history
+
+The boundary is enforced by review policy and automated validation. See
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
+
+## Contributing and support
+
+- [Contributing](CONTRIBUTING.md)
+- [Governance](GOVERNANCE.md)
+- [Maintainers](MAINTAINERS.md)
+- [Support](SUPPORT.md)
+- [Security](SECURITY.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+
+Small, tested, engine-agnostic improvements are welcome.
 
 ## License
 
 MIT License. See [LICENSE](LICENSE).
 
-Unreal Engine is a trademark or registered trademark of Epic Games, Inc.
-This project is not affiliated with or endorsed by Epic Games.
+Unreal Engine is a trademark or registered trademark of Epic Games, Inc. This project is
+not affiliated with or endorsed by Epic Games.

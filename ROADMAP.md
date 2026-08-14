@@ -1,22 +1,37 @@
 # Roadmap
 
-## 0.2
+The roadmap prioritizes verified usefulness over feature count. New numerical contracts
+must remain generic and must have a concrete integration use case.
 
-- [x] Configurable drag dead zone
-- [x] Nonlinear power response
-- [x] Clamped preview cursor
-- [x] Pure ballistic trajectory sampling
-- [x] Repository boundary validation
+## 0.3: portable and reproducible core
 
-## 0.3
+- [x] Header-only C++17 numerical source of truth
+- [x] Four launch response curves and direction snapping
+- [x] Ray/plane projection
+- [x] Damped trajectory and inverse target solver
+- [x] Fixed-width command packet with CRC
+- [x] Stable motion-state contract
+- [x] Property tests, sanitizers, CodeQL, CMake install, and consumer smoke test
+- [x] Unreal and Blueprint wrappers for the portable contracts
 
-- Example host project or reproducible integration fixture
-- Public Unreal Engine version compatibility matrix
-- Optional collision-aware preview adapter kept outside the pure math layer
-- More validation around physics-body configuration
+## Release readiness
 
-## Later
+- [ ] Run `BuildPlugin` against the declared UE 5.8 environment
+- [ ] Execute the `FlickPhysics` Automation Test prefix
+- [ ] Record the first verified compatibility row
+- [ ] Publish an original minimal integration fixture and short visual demonstration
+- [ ] Create the first engine-verified release package
 
-- Additional generic power curves if real users request them
-- Lightweight packaged-plugin releases after engine build verification
-- Community-requested extensions that preserve the plugin boundary
+## Adoption work
+
+- [ ] Add a concise migration guide from direct impulse code
+- [ ] Collect real external integration feedback through issues
+- [ ] Add only compatibility fixes or generic features requested by real consumers
+- [ ] Document measured benchmark methodology without universal performance claims
+
+## Explicitly out of scope
+
+- a complete game framework
+- characters, factions, combat, progression, or content
+- custom networking authentication or authoritative simulation
+- proprietary assets or private product logic
