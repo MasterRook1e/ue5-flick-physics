@@ -16,6 +16,7 @@ must remain generic and must have a concrete integration use case.
 
 ## Release readiness
 
+- [x] Provide a repository-safe one-command Windows verification harness
 - [ ] Run `BuildPlugin` against the declared UE 5.8 environment
 - [ ] Execute the `FlickPhysics` Automation Test prefix
 - [ ] Record the first verified compatibility row

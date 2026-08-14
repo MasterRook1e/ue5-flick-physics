@@ -26,6 +26,9 @@ jobs:
       - name: Validate repository boundary
         run: python scripts/validate_repository.py
 
+      - name: Validate Unreal verification harness
+        run: python scripts/validate_unreal_harness.py
+
       - name: Verify release versions
         run: python scripts/check_release_version.py
 
@@ -35,6 +38,45 @@ jobs:
           python scripts/package_plugin.py --output dist/package-a.zip
           python scripts/package_plugin.py --output dist/package-b.zip
           cmp dist/package-a.zip dist/package-b.zip
+
+  unreal-verification-harness:
+    name: Unreal verification harness syntax
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell harness
+        shell: pwsh
+        run: |
+          $paths = @(
+            'scripts/verify_unreal_windows.ps1',
+            'scripts/UnrealVerification/EngineDiscovery.psm1',
+            'scripts/UnrealVerification/Execution.psm1'
+          )
+          $failed = $false
+          foreach ($path in $paths) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $path),
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "${path}: $($_.Message)" }
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Check command wrapper
+        shell: pwsh
+        run: |
+          $wrapper = Get-Content scripts/verify_unreal_windows.cmd -Raw
+          if ($wrapper -notmatch 'verify_unreal_windows\.ps1') {
+            throw 'Command wrapper does not invoke the PowerShell harness.'
+          }
 
   portable-core:
     name: Portable core (${{ matrix.os }})

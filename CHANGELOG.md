@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+- Added a Windows verification harness that discovers UE 5.8, runs `BuildPlugin`, creates
+  a neutral temporary host, executes the `FlickPhysics` Automation Test prefix, and emits
+  review-safe JSON/Markdown evidence outside the repository.
 - Establish public Unreal Engine build and Automation Test evidence.
 - Add an original minimal host-project integration fixture and visual demonstration.
 

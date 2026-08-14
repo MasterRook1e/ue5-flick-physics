@@ -185,6 +185,7 @@ interface is tested from outside this repository.
 
 ```bash
 python scripts/validate_repository.py
+python scripts/validate_unreal_harness.py
 python scripts/check_release_version.py v0.3.0
 python scripts/package_plugin.py --output dist/FlickPhysics-source.zip
 ```
@@ -197,8 +198,16 @@ continue delegating to the portable core.
 
 Portable C++ compatibility is automated. Unreal compatibility requires a named engine,
 platform, `RunUAT BuildPlugin` output, and Automation Test result before it is recorded.
-See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md). This distinction is intentional: test
-source in a repository is not the same thing as an executed engine build.
+The Windows verification harness creates a neutral temporary host and produces reviewed
+summary artifacts without touching a private project:
+
+```powershell
+scripts\verify_unreal_windows.ps1 -EngineRoot "D:\UE_5.8"
+```
+
+See [Unreal verification](docs/UNREAL_VERIFICATION.md) and
+[Compatibility](docs/COMPATIBILITY.md). This distinction is intentional: test source in a
+repository is not the same thing as an executed engine build.
 
 ## Project boundary
 
