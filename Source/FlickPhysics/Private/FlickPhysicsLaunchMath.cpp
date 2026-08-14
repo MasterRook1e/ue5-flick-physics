@@ -1,0 +1,55 @@
+#include "FlickPhysicsLaunchMath.h"
+
+FFlickPhysicsLaunchResult FFlickPhysicsLaunchMath::Calculate(
+    const FVector& AnchorWorldPosition,
+    const FVector& CursorWorldPosition,
+    const FFlickPhysicsLaunchSettings& Settings)
+{
+    FFlickPhysicsLaunchResult Result;
+
+    if (AnchorWorldPosition.ContainsNaN() ||
+        CursorWorldPosition.ContainsNaN() ||
+        !FMath::IsFinite(Settings.MaxDragDistance) ||
+        !FMath::IsFinite(Settings.MinLaunchImpulse) ||
+        !FMath::IsFinite(Settings.MaxLaunchImpulse) ||
+        Settings.MaxDragDistance <= UE_KINDA_SMALL_NUMBER)
+    {
+        return Result;
+    }
+
+    FVector PlaneNormal = Settings.LaunchPlaneNormal.GetSafeNormal();
+    if (PlaneNormal.IsNearlyZero() || PlaneNormal.ContainsNaN())
+    {
+        PlaneNormal = FVector::UpVector;
+    }
+
+    const FVector RawPull = AnchorWorldPosition - CursorWorldPosition;
+    const FVector PullVector = FVector::VectorPlaneProject(RawPull, PlaneNormal);
+
+    Result.DragDistance = PullVector.Size();
+
+    if (!FMath::IsFinite(Result.DragDistance) ||
+        Result.DragDistance <= UE_KINDA_SMALL_NUMBER)
+    {
+        Result.DragDistance = 0.0f;
+        return Result;
+    }
+
+    Result.Direction = PullVector / Result.DragDistance;
+    Result.NormalizedPower = FMath::Clamp(
+        Result.DragDistance / Settings.MaxDragDistance,
+        0.0f,
+        1.0f);
+
+    const float SafeMinImpulse = FMath::Max(0.0f, Settings.MinLaunchImpulse);
+    const float SafeMaxImpulse = FMath::Max(SafeMinImpulse, Settings.MaxLaunchImpulse);
+    const float ImpulseMagnitude = FMath::Lerp(
+        SafeMinImpulse,
+        SafeMaxImpulse,
+        Result.NormalizedPower);
+
+    Result.Impulse = Result.Direction * ImpulseMagnitude;
+    Result.bValid = !Result.Impulse.ContainsNaN() && !Result.Impulse.IsNearlyZero();
+
+    return Result;
+}
