@@ -1,20 +1,22 @@
 # Roadmap
 
-## 0.1
-
-- Stable pure launch math
-- Generic aim-session component
-- Blueprint API
-- Automation tests
-
 ## 0.2
 
-- Optional trajectory sampling helper
+- [x] Configurable drag dead zone
+- [x] Nonlinear power response
+- [x] Clamped preview cursor
+- [x] Pure ballistic trajectory sampling
+- [x] Repository boundary validation
+
+## 0.3
+
+- Example host project or reproducible integration fixture
+- Public Unreal Engine version compatibility matrix
+- Optional collision-aware preview adapter kept outside the pure math layer
 - More validation around physics-body configuration
-- Example integration documentation
 
 ## Later
 
-- UE version compatibility matrix
-- Lightweight CI/build validation where practical
-- Community-requested generic extensions that preserve the plugin boundary
+- Additional generic power curves if real users request them
+- Lightweight packaged-plugin releases after engine build verification
+- Community-requested extensions that preserve the plugin boundary

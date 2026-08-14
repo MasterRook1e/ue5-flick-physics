@@ -16,4 +16,10 @@ public:
         const FVector& AnchorWorldPosition,
         const FVector& CursorWorldPosition,
         const FFlickPhysicsLaunchSettings& Settings);
+
+    UFUNCTION(BlueprintPure, Category = "Flick Physics")
+    static FFlickPhysicsTrajectoryResult SampleBallisticTrajectory(
+        const FVector& StartWorldPosition,
+        const FVector& InitialVelocity,
+        const FFlickPhysicsTrajectorySettings& Settings);
 };
