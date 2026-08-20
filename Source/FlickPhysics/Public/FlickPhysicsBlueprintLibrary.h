@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "FlickPhysicsLifecycleTypes.h"
 #include "FlickPhysicsTypes.h"
 #include "FlickPhysicsBlueprintLibrary.generated.h"
 
@@ -72,4 +73,26 @@ public:
         const FVector& AngularVelocity,
         float DeltaSeconds,
         const FFlickPhysicsMotionSettings& Settings);
+
+    UFUNCTION(BlueprintPure, Category = "Flick Physics|Lifecycle")
+    static FFlickPhysicsLifecycleUpdate BeginFlickLifecycle(
+        const FVector& InitialPosition,
+        bool bHasPosition = true);
+
+    UFUNCTION(BlueprintPure, Category = "Flick Physics|Lifecycle")
+    static FFlickPhysicsLifecycleUpdate AdvanceFlickLifecycle(
+        const FFlickPhysicsLifecycleTracker& Previous,
+        const FVector& Position,
+        bool bHasPosition,
+        const FVector& LinearVelocity,
+        const FVector& AngularVelocity,
+        float DeltaSeconds,
+        const FFlickPhysicsLifecycleSettings& Settings);
+
+    UFUNCTION(BlueprintPure, Category = "Flick Physics|Lifecycle")
+    static FFlickPhysicsLifecycleUpdate CancelFlickLifecycle(
+        const FFlickPhysicsLifecycleTracker& Previous);
+
+    UFUNCTION(BlueprintPure, Category = "Flick Physics|Lifecycle")
+    static bool IsFlickLifecycleTerminal(EFlickPhysicsLifecyclePhase Phase);
 };
