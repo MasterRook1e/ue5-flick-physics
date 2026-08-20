@@ -1,0 +1,111 @@
+{
+  "$schema": "https://raw.githubusercontent.com/MasterRook1e/maintainer-contracts/main/schemas/config.schema.json",
+  "version": 1,
+  "title": {
+    "pattern": "^(?:feat|fix|docs|test|refactor|perf|build|ci|chore)(?:\\([^)]+\\))?!?: .+",
+    "maxLength": 100,
+    "severity": "warning"
+  },
+  "requiredSections": [
+    {
+      "heading": "Summary",
+      "minChars": 40,
+      "severity": "error"
+    },
+    {
+      "heading": "Public API and compatibility",
+      "minChars": 30,
+      "severity": "error"
+    },
+    {
+      "heading": "Boundary and security",
+      "minChars": 20,
+      "severity": "error"
+    },
+    {
+      "heading": "Validation",
+      "minChars": 20,
+      "severity": "error"
+    },
+    {
+      "heading": "AI assistance",
+      "minChars": 20,
+      "severity": "warning"
+    },
+    {
+      "heading": "Reviewer notes",
+      "minChars": 10,
+      "severity": "warning"
+    }
+  ],
+  "checkboxes": [
+    {
+      "section": "Validation",
+      "minChecked": 1,
+      "severity": "error"
+    }
+  ],
+  "pathRules": [
+    {
+      "name": "portable-or-public-api-change",
+      "paths": [
+        "CMakeLists.txt",
+        "cmake/**",
+        "FlickPhysics.uplugin",
+        "Source/FlickPhysics/Public/**"
+      ],
+      "requireCheckedTexts": [
+        "portable build and CTest"
+      ],
+      "severity": "error"
+    },
+    {
+      "name": "reflected-unreal-api-change",
+      "paths": [
+        "FlickPhysics.uplugin",
+        "Source/FlickPhysics/Public/**",
+        "Source/FlickPhysics/Private/**"
+      ],
+      "requireCheckedTexts": [
+        "Unreal Automation Tests executed, or explicitly marked not executed",
+        "BuildPlugin executed, or explicitly marked not executed"
+      ],
+      "severity": "error"
+    },
+    {
+      "name": "boundary-or-release-change",
+      "paths": [
+        ".github/workflows/**",
+        "scripts/**",
+        "docs/WIRE_FORMAT.md",
+        "docs/THREAT_MODEL.md"
+      ],
+      "requireCheckedTexts": [
+        "No product-specific code, assets, configuration, or private history is included.",
+        "No credentials, generated output, engine source, or proprietary assets are included."
+      ],
+      "severity": "error"
+    }
+  ],
+  "sizeRules": {
+    "maxFiles": {
+      "limit": 80,
+      "severity": "warning"
+    },
+    "maxAdditions": {
+      "limit": 5000,
+      "severity": "warning"
+    },
+    "maxDeletions": {
+      "limit": 5000,
+      "severity": "warning"
+    }
+  },
+  "aiDisclosure": {
+    "section": "AI assistance",
+    "required": true,
+    "minChars": 20,
+    "severity": "warning"
+  },
+  "failLevel": "error"
+}
