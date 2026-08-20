@@ -7,6 +7,20 @@ All notable changes to this project are documented here.
 - Establish public Unreal Engine build and Automation Test evidence.
 - Add an original minimal host-project integration fixture and visual demonstration.
 
+## 0.4.0
+
+- Added a deterministic launch-lifecycle state machine to the portable C++17 core.
+- Added distinct launched, moving, settling, settled, timed-out, and cancelled phases.
+- Added separate start and settle thresholds to provide explicit hysteresis.
+- Added minimum active time, stable-window completion, and optional timeout protection.
+- Added path distance, displacement, elapsed time, sample count, and peak-speed telemetry.
+- Added fixed-seed lifecycle property testing plus focused transition regression tests.
+- Added reflected Unreal lifecycle settings, tracker, update, and completion types.
+- Added pure C++ and Blueprint lifecycle functions backed by the portable core.
+- Added `UFlickPhysicsLifecycleComponent` with post-physics sampling and transition delegates.
+- Added opt-in velocity limiting, residual-velocity clearing, and body sleep behavior.
+- Added Unreal Automation Test source and lifecycle integration documentation.
+
 ## 0.3.0
 
 - Added a header-only C++17 portable numerical core with no Unreal dependency.

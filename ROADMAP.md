@@ -3,6 +3,17 @@
 The roadmap prioritizes verified usefulness over feature count. New numerical contracts
 must remain generic and must have a concrete integration use case.
 
+## 0.4: lifecycle and telemetry
+
+- [x] Deterministic launched/moving/settling/terminal state machine
+- [x] Separate start and settle thresholds
+- [x] Minimum active duration and stable-window completion
+- [x] Optional timeout and completion reason
+- [x] Distance, displacement, peak-speed, elapsed-time, and sample telemetry
+- [x] Portable regression and property tests
+- [x] Unreal and Blueprint wrappers
+- [x] Post-physics lifecycle component with opt-in body mutation
+
 ## 0.3: portable and reproducible core
 
 - [x] Header-only C++17 numerical source of truth

@@ -2,6 +2,7 @@
 
 #include "FlickPhysicsGeometryMath.h"
 #include "FlickPhysicsLaunchMath.h"
+#include "FlickPhysicsLifecycleMath.h"
 #include "FlickPhysicsMotionMath.h"
 #include "FlickPhysicsQuantizationMath.h"
 #include "FlickPhysicsTrajectoryMath.h"
@@ -113,4 +114,42 @@ FFlickPhysicsMotionUpdate UFlickPhysicsBlueprintLibrary::AdvanceFlickMotion(
         AngularVelocity,
         DeltaSeconds,
         Settings);
+}
+
+FFlickPhysicsLifecycleUpdate UFlickPhysicsBlueprintLibrary::BeginFlickLifecycle(
+    const FVector& InitialPosition,
+    const bool bHasPosition)
+{
+    return FFlickPhysicsLifecycleMath::Begin(InitialPosition, bHasPosition);
+}
+
+FFlickPhysicsLifecycleUpdate UFlickPhysicsBlueprintLibrary::AdvanceFlickLifecycle(
+    const FFlickPhysicsLifecycleTracker& Previous,
+    const FVector& Position,
+    const bool bHasPosition,
+    const FVector& LinearVelocity,
+    const FVector& AngularVelocity,
+    const float DeltaSeconds,
+    const FFlickPhysicsLifecycleSettings& Settings)
+{
+    return FFlickPhysicsLifecycleMath::Advance(
+        Previous,
+        Position,
+        bHasPosition,
+        LinearVelocity,
+        AngularVelocity,
+        DeltaSeconds,
+        Settings);
+}
+
+FFlickPhysicsLifecycleUpdate UFlickPhysicsBlueprintLibrary::CancelFlickLifecycle(
+    const FFlickPhysicsLifecycleTracker& Previous)
+{
+    return FFlickPhysicsLifecycleMath::Cancel(Previous);
+}
+
+bool UFlickPhysicsBlueprintLibrary::IsFlickLifecycleTerminal(
+    const EFlickPhysicsLifecyclePhase Phase)
+{
+    return FFlickPhysicsLifecycleMath::IsTerminal(Phase);
 }

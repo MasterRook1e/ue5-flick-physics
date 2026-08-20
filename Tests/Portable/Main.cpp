@@ -10,6 +10,8 @@ int main()
     flickphysics::tests::TestTrajectory();
     flickphysics::tests::TestCommand();
     flickphysics::tests::TestMotion();
+    flickphysics::tests::TestLifecycle();
+    flickphysics::tests::TestLifecycleProperties();
     flickphysics::tests::TestProperties();
     flickphysics::tests::TestInvalidInputs();
 
