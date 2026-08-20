@@ -42,6 +42,8 @@ void TestGeometry();
 void TestTrajectory();
 void TestCommand();
 void TestMotion();
+void TestLifecycle();
+void TestLifecycleProperties();
 void TestProperties();
 void TestInvalidInputs();
 } // namespace flickphysics::tests
