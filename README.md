@@ -8,12 +8,12 @@ A source-only Unreal Engine 5 C++ plugin and header-only C++17 library for
 **drag-to-launch / flick interactions**.
 
 Flick Physics turns a world-space pointer drag into a validated launch command, then
-provides the geometry, trajectory, replay-packet, and motion-settling utilities commonly
-needed around that interaction. The numerical kernel is compiled and tested without
-Unreal Engine; the UE module exposes the same contracts through `FVector`, reflected
-structs, Blueprint functions, and an aim-session component.
+provides the geometry, trajectory, replay-packet, stable-motion, and lifecycle utilities
+commonly needed around that interaction. The numerical kernel is compiled and tested
+without Unreal Engine; the UE module exposes the same contracts through `FVector`,
+reflected structs, Blueprint functions, and reusable actor components.
 
-> **Project status:** `0.3.0` alpha. Portable-core builds and tests are automated across
+> **Project status:** `0.4.0` alpha. Portable-core builds and tests are automated across
 > Linux, Windows, and macOS. Unreal Automation Tests are included, but this repository
 > does not claim a named Unreal Engine version as verified until a public `BuildPlugin`
 > record is added to the compatibility matrix.
@@ -47,18 +47,24 @@ structs, Blueprint functions, and an aim-session component.
 The packet is a compact transport primitive, not authentication, encryption, or a
 cross-platform lockstep guarantee. See [the wire-format document](docs/WIRE_FORMAT.md).
 
-### Motion state
+### Motion and launch lifecycle
 
-- linear and angular speed caps
-- threshold-based moving/settled state
-- stable-duration hysteresis to avoid one-frame settling
-- explicit transition flags for downstream gameplay code
+- lightweight moving/settled tracker with speed caps and stable-duration hysteresis
+- launched, moving, settling, settled, timeout, and cancelled lifecycle phases
+- distinct start and settle thresholds for explicit hysteresis
+- minimum active duration and optional maximum duration
+- stable, timeout, and cancellation completion reasons
+- elapsed time, sample count, path distance, displacement, and peak-speed telemetry
+- transition flags and Blueprint delegates for downstream host code
+
+See [the lifecycle contract](docs/LIFECYCLE.md).
 
 ### Engineering and maintenance
 
 - one header-only C++17 core with no Unreal dependency and no dynamic allocation
 - Unreal wrappers delegate to that same tested core instead of duplicating formulas
-- 50,000-case seeded property test plus focused regression tests
+- 50,000-case launch property test plus 10,000 seeded lifecycle sequences
+- focused regression tests for numerical and lifecycle edge cases
 - AddressSanitizer and UndefinedBehaviorSanitizer on Linux CI
 - CMake package install and external-consumer smoke test
 - CodeQL analysis, public-boundary validation, and deterministic source packaging
@@ -72,9 +78,10 @@ Source/FlickPhysics/Public/FlickPhysicsPortableCore.h
                     ├── CMake / CTest / CLI / benchmark
                     │
                     └── Unreal adapter
-                          ├── reflected result and settings types
+                          ├── reflected settings, trackers, and results
                           ├── Blueprint function library
-                          ├── aim-session actor component
+                          ├── aim-session component
+                          ├── post-launch lifecycle component
                           └── Unreal Automation Tests
 ```
 
@@ -97,7 +104,7 @@ Regenerate project files when required, build the editor target, and enable
 **Flick Physics** in the Plugins panel. Detailed integration guidance is in
 [docs/INTEGRATION.md](docs/INTEGRATION.md).
 
-## Unreal C++ example
+## Unreal C++ launch example
 
 ```cpp
 FFlickPhysicsLaunchSettings Settings;
@@ -119,6 +126,19 @@ if (Launch.Status == EFlickPhysicsLaunchStatus::Valid)
 }
 ```
 
+## Post-launch lifecycle example
+
+```cpp
+if (LaunchComponent->ReleaseToBody(PhysicsBody))
+{
+    LifecycleComponent->StartTracking(PhysicsBody);
+}
+```
+
+`UFlickPhysicsLifecycleComponent` samples the body after physics, records motion telemetry,
+and emits separate delegates for motion start, settling, resumed motion, stable completion,
+timeout, and cancellation. Body mutation is disabled by default.
+
 ## Blueprint surface
 
 `UFlickPhysicsBlueprintLibrary` exposes pure nodes for:
@@ -128,25 +148,30 @@ if (Launch.Status == EFlickPhysicsLaunchStatus::Valid)
 - sampling a damped or undamped trajectory
 - solving an initial velocity for a target and duration
 - quantizing, encoding, decoding, and reconstructing a launch command
-- advancing the stable motion-state tracker
+- advancing the lightweight stable motion tracker
+- beginning, advancing, cancelling, and inspecting a launch lifecycle
 
 `UFlickPhysicsLaunchComponent` owns an aim session and applies a validated impulse to any
-simulating `UPrimitiveComponent`. It deliberately does not decide whether an actor is
-allowed to move; selection, ownership, turns, cooldowns, and other policy stay in the host.
+simulating `UPrimitiveComponent`. `UFlickPhysicsLifecycleComponent` observes a launched
+body and exposes generic transition events. Neither component decides ownership, turns,
+actions, damage, cooldowns, or other host policy.
 
 ## Use the portable C++17 core
 
 ```cpp
 #include <FlickPhysicsPortableCore.h>
 
-flickphysics::LaunchSettings settings;
-settings.MaxDragDistance = 300.0;
-settings.Curve = flickphysics::ResponseCurve::SmootherStep;
+flickphysics::LaunchSettings launchSettings;
+launchSettings.MaxDragDistance = 300.0;
+launchSettings.Curve = flickphysics::ResponseCurve::SmootherStep;
 
 const flickphysics::LaunchResult launch = flickphysics::CalculateLaunch(
     {0.0, 0.0, 0.0},
     {-150.0, 0.0, 0.0},
-    settings);
+    launchSettings);
+
+flickphysics::LifecycleUpdate lifecycle =
+    flickphysics::BeginLifecycle({0.0, 0.0, 0.0});
 ```
 
 ### Build and test
@@ -174,7 +199,7 @@ cmake --install build/portable-release --prefix ./install
 A consumer can then use:
 
 ```cmake
-find_package(FlickPhysicsPortableCore 0.3 CONFIG REQUIRED)
+find_package(FlickPhysicsPortableCore 0.4 CONFIG REQUIRED)
 target_link_libraries(my_target PRIVATE FlickPhysics::PortableCore)
 ```
 
@@ -185,13 +210,13 @@ interface is tested from outside this repository.
 
 ```bash
 python scripts/validate_repository.py
-python scripts/check_release_version.py v0.3.0
+python scripts/check_release_version.py v0.4.0
 python scripts/package_plugin.py --output dist/FlickPhysics-source.zip
 ```
 
 The validator checks the public/private boundary, plugin metadata, version agreement,
-secret patterns, generated files, Unreal generated-header ordering, and that UE wrappers
-continue delegating to the portable core.
+secret patterns, generated files, Unreal generated-header ordering, and that established UE
+wrappers continue delegating to the portable core.
 
 ## Compatibility evidence
 

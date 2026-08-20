@@ -19,6 +19,7 @@ The core owns:
 - inverse initial-velocity solving for a fixed arrival time
 - fixed-width command quantization and a versioned CRC-protected packet
 - speed limiting and stable moving/settled transitions
+- deterministic launch lifecycle, completion reasons, and motion telemetry
 
 The core does not own allocation, input polling, collision queries, actors, worlds,
 rendering, replication, or gameplay policy. Public functions are `noexcept`, return
@@ -31,22 +32,26 @@ invokes the portable contract, then converts the result back.
 
 The adapter layer owns:
 
-- `UENUM` and `USTRUCT` types in `FlickPhysicsTypes.h`
+- `UENUM` and `USTRUCT` types in `FlickPhysicsTypes.h` and `FlickPhysicsLifecycleTypes.h`
 - Blueprint functions in `UFlickPhysicsBlueprintLibrary`
-- C++ facade types such as `FFlickPhysicsLaunchMath`
+- C++ facade types such as `FFlickPhysicsLaunchMath` and `FFlickPhysicsLifecycleMath`
 - Automation Tests for the reflected interface
 
-Thin wrappers are deliberate. Repository validation checks that the wrappers call the
-portable core so formulas cannot silently diverge.
+Thin wrappers are deliberate. Repository validation checks that established wrappers call
+the portable core so formulas cannot silently diverge.
 
-## Layer 3: aim session and impulse application
+## Layer 3: stateful engine components
 
-`UFlickPhysicsLaunchComponent` is stateful. It records the anchor and pointer at aim start,
-recalculates a preview as the pointer moves, and applies one validated impulse to a
-simulating `UPrimitiveComponent`.
+`UFlickPhysicsLaunchComponent` records an aim session and applies one validated impulse to
+a simulating `UPrimitiveComponent`.
 
-The component does not contain ownership, selection, turn, combat, cooldown, or scoring
-rules. A host decides whether `BeginAim` and `ReleaseToBody` are allowed.
+`UFlickPhysicsLifecycleComponent` samples one body after launch in the post-physics tick
+group. It emits generic launched, moving, settling, resumed, settled, timeout, and cancel
+events. It can optionally apply velocity caps or sleep a stably settled body, but these
+mutations are disabled by default.
+
+Neither component contains ownership, selection, turn, combat, cooldown, scoring, or
+content rules. A host decides when the components may be used and what each event means.
 
 ## Data flow
 
@@ -58,6 +63,9 @@ anchor + cursor ── CalculateLaunch ───┼── preview direction/powe
                                       ├── Quantize / Encode ── replay or transport bytes
                                       │
                                       └── ReleaseToBody ────── physics impulse
+                                                                  │
+                                                                  v
+position + velocities ── AdvanceLifecycle ── phase/events/telemetry
 
 initial velocity ── EvaluateTrajectory ── preview points + velocities
 start + target ─── SolveInitialVelocity ── velocity for fixed arrival duration
@@ -67,7 +75,7 @@ physics velocities ── AdvanceMotion ───── clamped velocities + tra
 ## Verification layers
 
 1. `scripts/validate_repository.py` checks repository boundaries, metadata, secrets,
-   generated-header ordering, versions, and adapter delegation.
+   generated-header ordering, versions, and established adapter delegation.
 2. CMake compiles the portable tests, CLI, and benchmark with strict warnings.
 3. Linux CI adds AddressSanitizer and UndefinedBehaviorSanitizer.
 4. CMake installs an exported package and a separate consumer project finds and links it.

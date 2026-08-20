@@ -62,7 +62,7 @@ Use `Status` to distinguish zero drag, dead-zone input, invalid ranges, and a va
 `ClampedCursorWorldPosition` is suitable for a pull line or reticle. `Direction` and
 `NormalizedPower` can drive arrows, colors, audio, or haptics without applying physics.
 
-## 4. Stateful component workflow
+## 4. Stateful launch component
 
 Add `UFlickPhysicsLaunchComponent` to an actor when a reusable aim session is useful:
 
@@ -77,7 +77,30 @@ The host should check its own policy before beginning or releasing. `ReleaseToBo
 requires a non-null `UPrimitiveComponent` with physics simulation enabled. On rejection,
 the component cancels the aim and applies no impulse.
 
-## 5. Trajectory preview
+## 5. Track the post-launch lifecycle
+
+Add `UFlickPhysicsLifecycleComponent` when downstream code needs robust motion phases and
+telemetry rather than a one-frame velocity check:
+
+```cpp
+if (LaunchComponent->ReleaseToBody(PhysicsPrimitive))
+{
+    LifecycleComponent->StartTracking(PhysicsPrimitive);
+}
+```
+
+The component samples in `TG_PostPhysics` and exposes delegates for tracking start, motion
+start, settling, resumed motion, stable completion, timeout, cancellation, and every
+validated update. It records elapsed time, path distance, displacement, peak speeds, and
+sample count.
+
+The component is observation-only by default. Velocity limiting, residual-velocity zeroing,
+and sleep-on-settle are separate opt-in properties. See [LIFECYCLE.md](LIFECYCLE.md).
+
+For fully stateless use, call `FFlickPhysicsLifecycleMath::Begin`, `Advance`, and `Cancel`
+or the equivalent Blueprint functions.
+
+## 6. Trajectory preview
 
 The preview model supports constant acceleration and exponential linear damping:
 
@@ -98,20 +121,9 @@ The result includes matching position and velocity arrays. The helper performs n
 query. A host can line-trace between consecutive points and stop at its own first hit.
 
 The inverse solver finds a velocity that reaches a target after `Duration` under the same
-acceleration and damping model:
+acceleration and damping model.
 
-```cpp
-const FFlickPhysicsTargetSolveResult Solve =
-    FFlickPhysicsTrajectoryMath::SolveInitialVelocity(
-        StartWorldPosition,
-        TargetWorldPosition,
-        Settings);
-```
-
-This is useful for previews, authored demonstrations, and controlled tools. It is not an
-automatic gameplay aim-assist policy.
-
-## 6. Compact command representation
+## 7. Compact command representation
 
 A valid direction and normalized power can be quantized and encoded:
 
@@ -129,33 +141,36 @@ Decode the six-byte packet, verify the packet result, then apply host authorizat
 using it. The CRC is corruption detection, not security. Both sides must agree on the
 launch-plane normal convention. See `WIRE_FORMAT.md`.
 
-## 7. Stable motion state
+## 8. Lightweight stable motion state
 
-The motion utility turns raw linear and angular velocities into a stable state transition:
+For code that only needs speed limiting and a two-state moving/settled signal, use the
+smaller motion utility:
 
 ```cpp
 FFlickPhysicsMotionTracker Tracker;
 const FFlickPhysicsMotionUpdate Update = FFlickPhysicsMotionMath::Advance(
     Tracker,
     PhysicsBody->GetPhysicsLinearVelocity(),
-    PhysicsBody->GetPhysicsAngularVelocityInDegrees(),
+    PhysicsBody->GetPhysicsAngularVelocityInRadians(),
     DeltaSeconds,
     MotionSettings);
 ```
 
-Apply `Update.LinearVelocity` and `Update.AngularVelocity` when a clamp flag is set. When
-`bBecameSettled` is true, the host may zero residual velocity and call
-`PutRigidBodyToSleep`. The utility does not mutate a body itself.
+The lifecycle API is the better fit when the host needs launched/settling phases, timeout,
+completion reason, path telemetry, or transition delegates.
 
 ## Blueprint equivalents
 
-`UFlickPhysicsBlueprintLibrary` exposes the same stateless geometry, launch, trajectory,
-quantization, packet, and motion contracts. The launch component is Blueprint-spawnable
-and exposes aim-update and release delegates.
+`UFlickPhysicsBlueprintLibrary` exposes stateless geometry, launch, trajectory,
+quantization, packet, motion, and lifecycle contracts. Both runtime components are
+Blueprint-spawnable and expose delegates.
 
 ## Troubleshooting
 
 - **No launch:** inspect `Status`, dead-zone distance, impulse range, and simulation state.
+- **Lifecycle cancels immediately:** verify the primitive still exists and simulates physics.
+- **Never settles:** inspect start/settle thresholds, units, constraints, and continuous
+  collision jitter; set a timeout when a hard upper bound is required.
 - **Direction is reversed:** the mechanic intentionally launches opposite the pull.
 - **Pointer point jumps:** verify the ray and plane are in the same world space and reject
   parallel/behind-origin intersections.
