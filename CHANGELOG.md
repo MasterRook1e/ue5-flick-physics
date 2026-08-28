@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+- Added deterministic impact metrics for relative normal/tangential speed, alignment,
+  reduced mass, directional momentum, normal kinetic energy, and supplied impulse.
+- Added configurable dead zones, normalization ranges, weighted response curves, and
+  bounded response scaling without embedding damage, team, score, or turn policy.
+- Added stable root/immediate/carrier provenance, bounded chain transfer, canonical
+  unordered body-pair keys, and fail-closed causal source selection.
+- Added optional arbitrary-plane projection for tabletop and planar source attribution.
+- Added focused impact regressions plus 10,000 fixed-seed symmetry and bounded-output cases.
+- Added installed-package, CLI, benchmark, architecture, and integration evidence for the
+  new portable impact contracts.
 - Establish public Unreal Engine build and Automation Test evidence.
 - Add an original minimal host-project integration fixture and visual demonstration.
 

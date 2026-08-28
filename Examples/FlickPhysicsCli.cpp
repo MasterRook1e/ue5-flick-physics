@@ -31,19 +31,40 @@ int main(const int ArgumentCount, char** Arguments)
     Settings.MaxLaunchImpulse = 10000.0;
     Settings.Curve = flickphysics::ResponseCurve::SmootherStep;
 
-    const auto Result = flickphysics::CalculateLaunch(
+    const auto Launch = flickphysics::CalculateLaunch(
         {},
         {CursorX, CursorY, 0.0},
         Settings);
 
+    flickphysics::ImpactMetricsInput ImpactInput;
+    ImpactInput.SourceVelocity = Launch.Impulse * 0.05;
+    ImpactInput.TargetVelocity = {};
+    ImpactInput.ContactNormal = Launch.Direction;
+    ImpactInput.SourceMass = 2.0;
+    ImpactInput.TargetMass = 5.0;
+    ImpactInput.NormalImpulse = flickphysics::Size(Launch.Impulse) * 0.25;
+
+    const auto Impact = flickphysics::BuildImpactMetrics(ImpactInput);
+    const auto Response = flickphysics::EvaluateImpactResponse(Impact);
+
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "{\n";
-    std::cout << "  \"valid\": " << (Result.IsValid() ? "true" : "false") << ",\n";
-    std::cout << "  \"direction\": [" << Result.Direction.X << ", "
-              << Result.Direction.Y << ", " << Result.Direction.Z << "],\n";
-    std::cout << "  \"power\": " << Result.NormalizedPower << ",\n";
-    std::cout << "  \"impulse\": [" << Result.Impulse.X << ", "
-              << Result.Impulse.Y << ", " << Result.Impulse.Z << "]\n";
+    std::cout << "  \"valid\": " << (Launch.IsValid() ? "true" : "false") << ",\n";
+    std::cout << "  \"direction\": [" << Launch.Direction.X << ", "
+              << Launch.Direction.Y << ", " << Launch.Direction.Z << "],\n";
+    std::cout << "  \"power\": " << Launch.NormalizedPower << ",\n";
+    std::cout << "  \"impulse\": [" << Launch.Impulse.X << ", "
+              << Launch.Impulse.Y << ", " << Launch.Impulse.Z << "],\n";
+    std::cout << "  \"impact\": {\n";
+    std::cout << "    \"normal_speed\": " << Impact.NormalSpeed << ",\n";
+    std::cout << "    \"reduced_mass\": " << Impact.ReducedMass << ",\n";
+    std::cout << "    \"directional_momentum\": " << Impact.DirectionalMomentum << ",\n";
+    std::cout << "    \"normal_energy\": " << Impact.NormalKineticEnergy << ",\n";
+    std::cout << "    \"response_scale\": " << Response.ResponseScale << "\n";
+    std::cout << "  }\n";
     std::cout << "}\n";
-    return Result.IsValid() ? EXIT_SUCCESS : EXIT_FAILURE;
+
+    return Launch.IsValid() && Impact.IsValid() && Response.IsValid()
+        ? EXIT_SUCCESS
+        : EXIT_FAILURE;
 }

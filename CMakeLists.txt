@@ -39,6 +39,8 @@ if(FLICK_PHYSICS_BUILD_TESTS)
         flick_physics_portable_tests
         Tests/Portable/CommandTests.cpp
         Tests/Portable/GeometryTests.cpp
+        Tests/Portable/ImpactPropertyTests.cpp
+        Tests/Portable/ImpactTests.cpp
         Tests/Portable/LaunchTests.cpp
         Tests/Portable/LifecyclePropertyTests.cpp
         Tests/Portable/LifecycleTests.cpp
