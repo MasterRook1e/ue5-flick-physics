@@ -20,10 +20,13 @@ The core owns:
 - fixed-width command quantization and a versioned CRC-protected packet
 - speed limiting and stable moving/settled transitions
 - deterministic launch lifecycle, completion reasons, and motion telemetry
+- relative contact metrics, reduced-mass momentum, and normal-energy evidence
+- bounded impact response curves and metric dead zones
+- stable causal provenance, bounded transfer, pair keys, and fail-closed source selection
 
 The core does not own allocation, input polling, collision queries, actors, worlds,
-rendering, replication, or gameplay policy. Public functions are `noexcept`, return
-explicit validity/status data, and reject non-finite input.
+rendering, replication, damage, teams, scoring, or other gameplay policy. Public functions
+are `noexcept`, return explicit validity/status data, and reject non-finite input.
 
 ## Layer 2: Unreal adapter and reflected API
 
@@ -38,7 +41,8 @@ The adapter layer owns:
 - Automation Tests for the reflected interface
 
 Thin wrappers are deliberate. Repository validation checks that established wrappers call
-the portable core so formulas cannot silently diverge.
+the portable core so formulas cannot silently diverge. Impact attribution remains
+portable-first until a reflected wrapper has public engine-build evidence.
 
 ## Layer 3: stateful engine components
 
@@ -70,6 +74,10 @@ position + velocities ── AdvanceLifecycle ── phase/events/telemetry
 initial velocity ── EvaluateTrajectory ── preview points + velocities
 start + target ─── SolveInitialVelocity ── velocity for fixed arrival duration
 physics velocities ── AdvanceMotion ───── clamped velocities + transition flags
+
+body samples + contact normal ── BuildImpactMetrics ── speed/momentum/energy evidence
+impact evidence + policy-free ranges ── EvaluateImpactResponse ── bounded response scale
+body provenance + directional motion ── SelectImpactSource ── source/target or rejection
 ```
 
 ## Verification layers
@@ -79,16 +87,19 @@ physics velocities ── AdvanceMotion ───── clamped velocities + tra
 2. CMake compiles the portable tests, CLI, and benchmark with strict warnings.
 3. Linux CI adds AddressSanitizer and UndefinedBehaviorSanitizer.
 4. CMake installs an exported package and a separate consumer project finds and links it.
-5. CodeQL analyzes the compiled C++ path.
-6. Unreal Automation Tests exercise the reflected API when run inside an engine.
-7. `RunUAT BuildPlugin` is the release gate for a named Unreal compatibility claim.
+5. Fixed-seed property suites exercise launch, lifecycle, and impact invariants.
+6. CodeQL analyzes the compiled C++ path.
+7. The release workflow repeats the source gate, packages identical source archives,
+   publishes a checksum, and creates build provenance.
+8. Unreal Automation Tests exercise the reflected API when run inside an engine.
+9. `RunUAT BuildPlugin` is the release gate for a named Unreal compatibility claim.
 
-The repository does not treat layers 1-5 as proof that UnrealHeaderTool or a particular
-engine build accepted the module. That evidence is recorded separately.
+The repository does not treat portable verification as proof that UnrealHeaderTool or a
+particular engine build accepted the module. That evidence is recorded separately.
 
 ## Extension rules
 
 A proposed feature belongs in the portable core when it is deterministic numerical logic
 with no engine or product dependency. It belongs in the Unreal adapter when it is only a
 type conversion or reflection surface. It belongs in a host project when it requires
-content, world policy, collision policy, camera policy, or game rules.
+content, world policy, collision policy, camera policy, damage policy, or game rules.

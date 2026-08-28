@@ -1,0 +1,186 @@
+name: Publish GitHub release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "releases/v*.md"
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: Release notes path, for example releases/v0.5.0.md
+        required: true
+        default: releases/v0.5.0.md
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: github-release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Verify, attest, and publish source release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out exact release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release request
+        id: release
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          DISPATCH_NOTES: ${{ inputs.release_notes }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            notes="$DISPATCH_NOTES"
+          else
+            mapfile -t requests < <(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" -- 'releases/v*.md')
+            if [[ "${#requests[@]}" -ne 1 ]]; then
+              printf 'Expected exactly one changed release-notes file; found %s.\n' "${#requests[@]}" >&2
+              printf '%s\n' "${requests[@]}" >&2
+              exit 1
+            fi
+            notes="${requests[0]}"
+          fi
+
+          if [[ ! -f "$notes" ]]; then
+            printf 'Release notes do not exist: %s\n' "$notes" >&2
+            exit 1
+          fi
+
+          tag="$(basename "$notes" .md)"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            printf 'Release-notes filename must be semantic version vMAJOR.MINOR.PATCH.md: %s\n' "$notes" >&2
+            exit 1
+          fi
+
+          python scripts/check_release_version.py "$tag"
+
+          already_released=false
+          if release_json="$(gh release view "$tag" --json tagName,isDraft,isPrerelease,url 2>/dev/null)"; then
+            python - "$release_json" <<'PY'
+          import json
+          import sys
+
+          release = json.loads(sys.argv[1])
+          if release["isDraft"] or release["isPrerelease"]:
+              raise SystemExit(
+                  f"Existing {release['tagName']} is not a final release: {release['url']}"
+              )
+          PY
+            already_released=true
+          fi
+
+          printf 'notes=%s\n' "$notes" >> "$GITHUB_OUTPUT"
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'already_released=%s\n' "$already_released" >> "$GITHUB_OUTPUT"
+
+      - name: Confirm existing final release
+        if: steps.release.outputs.already_released == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh release view "$TAG" --json tagName,url,isDraft,isPrerelease
+
+      - name: Set up Python
+        if: steps.release.outputs.already_released != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate public repository boundary
+        if: steps.release.outputs.already_released != 'true'
+        run: python scripts/validate_repository.py
+
+      - name: Configure portable release gate
+        if: steps.release.outputs.already_released != 'true'
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DFLICK_PHYSICS_BUILD_BENCHMARKS=ON
+          -DFLICK_PHYSICS_ENABLE_SANITIZERS=ON
+
+      - name: Build portable release gate
+        if: steps.release.outputs.already_released != 'true'
+        run: cmake --build build --config Release --parallel
+
+      - name: Run portable release tests
+        if: steps.release.outputs.already_released != 'true'
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Install CMake package
+        if: steps.release.outputs.already_released != 'true'
+        run: cmake --install build --config Release --prefix install
+
+      - name: Configure external consumer
+        if: steps.release.outputs.already_released != 'true'
+        run: >-
+          cmake -S Tests/Consumer -B consumer-build
+          "-DCMAKE_PREFIX_PATH=${{ github.workspace }}/install"
+
+      - name: Build external consumer
+        if: steps.release.outputs.already_released != 'true'
+        run: cmake --build consumer-build --config Release --parallel
+
+      - name: Run external consumer
+        if: steps.release.outputs.already_released != 'true'
+        run: ctest --test-dir consumer-build --build-config Release --output-on-failure
+
+      - name: Build deterministic source archive and checksum
+        if: steps.release.outputs.already_released != 'true'
+        id: package
+        shell: bash
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          archive="dist/FlickPhysics-${TAG}-source.zip"
+          second="dist/FlickPhysics-${TAG}-source-second.zip"
+          python scripts/package_plugin.py --output "$archive"
+          python scripts/package_plugin.py --output "$second"
+          cmp "$archive" "$second"
+          sha256sum "$archive" > dist/SHA256SUMS.txt
+          printf 'archive=%s\n' "$archive" >> "$GITHUB_OUTPUT"
+          printf 'checksum=%s\n' "dist/SHA256SUMS.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Generate build provenance
+        if: steps.release.outputs.already_released != 'true'
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ steps.package.outputs.archive }}
+
+      - name: Create final GitHub release
+        if: steps.release.outputs.already_released != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          NOTES: ${{ steps.release.outputs.notes }}
+          ARCHIVE: ${{ steps.package.outputs.archive }}
+          CHECKSUM: ${{ steps.package.outputs.checksum }}
+          ATTESTATION_BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            "$ARCHIVE" \
+            "$CHECKSUM" \
+            "$ATTESTATION_BUNDLE" \
+            --target "$GITHUB_SHA" \
+            --title "Flick Physics $TAG" \
+            --notes-file "$NOTES" \
+            --latest
+
+          gh release view "$TAG" --json tagName,url,isDraft,isPrerelease

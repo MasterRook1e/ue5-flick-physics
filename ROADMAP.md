@@ -3,6 +3,18 @@
 The roadmap prioritizes verified usefulness over feature count. New numerical contracts
 must remain generic and must have a concrete integration use case.
 
+## 0.5: impact evidence and attribution
+
+- [x] Relative, normal, and tangential impact metrics
+- [x] Reduced-mass momentum and normal-energy evidence
+- [x] Weighted dead zones and bounded response curves
+- [x] Root, immediate-source, carrier, action, generation, and depth provenance
+- [x] Bounded provenance transfer and canonical unordered pair keys
+- [x] Team-independent directional source selection with ambiguity rejection
+- [x] Arbitrary-plane projection for planar interactions
+- [x] Focused regressions and 10,000 fixed-seed impact-pair properties
+- [x] Deterministic source release with checksum and build provenance
+
 ## 0.4: lifecycle and telemetry
 
 - [x] Deterministic launched/moving/settling/terminal state machine
@@ -27,6 +39,7 @@ must remain generic and must have a concrete integration use case.
 
 ## Release readiness
 
+- [x] Publish a portable source release with deterministic archive, checksum, and provenance
 - [ ] Run `BuildPlugin` against the declared UE 5.8 environment
 - [ ] Execute the `FlickPhysics` Automation Test prefix
 - [ ] Record the first verified compatibility row
@@ -37,6 +50,7 @@ must remain generic and must have a concrete integration use case.
 
 - [ ] Add a concise migration guide from direct impulse code
 - [ ] Collect real external integration feedback through issues
+- [ ] Add reflected impact wrappers only after public engine-build evidence exists
 - [ ] Add only compatibility fixes or generic features requested by real consumers
 - [ ] Document measured benchmark methodology without universal performance claims
 
