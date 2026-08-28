@@ -12,6 +12,8 @@ int main()
     flickphysics::tests::TestMotion();
     flickphysics::tests::TestLifecycle();
     flickphysics::tests::TestLifecycleProperties();
+    flickphysics::tests::TestImpact();
+    flickphysics::tests::TestImpactProperties();
     flickphysics::tests::TestProperties();
     flickphysics::tests::TestInvalidInputs();
 
