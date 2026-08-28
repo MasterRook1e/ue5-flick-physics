@@ -14,11 +14,10 @@ kernel is compiled and tested without Unreal Engine; the UE module exposes estab
 contracts through `FVector`, reflected structs, Blueprint functions, and reusable actor
 components.
 
-> **Project status:** `0.4.0` alpha with additional unreleased portable impact contracts on
-> `main`. Portable-core builds and tests are automated across Linux, Windows, and macOS.
-> Unreal Automation Tests are included, but this repository does not claim a named Unreal
-> Engine version as verified until a public `BuildPlugin` record is added to the compatibility
-> matrix.
+> **Project status:** `0.5.0` alpha source release. Portable-core builds and tests are
+> automated across Linux, Windows, and macOS. Unreal Automation Tests are included, but
+> this repository does not claim a named Unreal Engine version as verified until a public
+> `BuildPlugin` record is added to the compatibility matrix.
 
 ## What is included
 
@@ -86,6 +85,7 @@ The impact layer does not apply damage or decide ownership. See
 - AddressSanitizer and UndefinedBehaviorSanitizer on Linux CI
 - CMake package install and external-consumer smoke test
 - CodeQL analysis, public-boundary validation, and deterministic source packaging
+- versioned source releases with SHA-256 checksums and build provenance
 - no maps, assets, characters, rules, progression, or other product-specific content
 
 ## Architecture
@@ -121,6 +121,10 @@ YourProject/
 Regenerate project files when required, build the editor target, and enable
 **Flick Physics** in the Plugins panel. Detailed integration guidance is in
 [docs/INTEGRATION.md](docs/INTEGRATION.md).
+
+A source release archive may also be downloaded from the repository's Releases page. The
+archive is produced by the same deterministic packager used by CI and includes a checksum
+and provenance record. It is not an engine-built binary plugin.
 
 ## Unreal C++ launch example
 
@@ -174,8 +178,8 @@ simulating `UPrimitiveComponent`. `UFlickPhysicsLifecycleComponent` observes a l
 body and exposes generic transition events. Neither component decides ownership, turns,
 actions, damage, cooldowns, or other host policy.
 
-The current impact-attribution addition is portable-first. Reflected Unreal wrappers remain
-an explicit follow-up until they have public engine-build evidence.
+Impact attribution remains portable-first. Reflected Unreal wrappers remain an explicit
+follow-up until they have public engine-build evidence.
 
 ## Use the portable C++17 core
 
@@ -231,7 +235,7 @@ cmake --install build/portable-release --prefix ./install
 A consumer can then use:
 
 ```cmake
-find_package(FlickPhysicsPortableCore 0.4 CONFIG REQUIRED)
+find_package(FlickPhysicsPortableCore 0.5 CONFIG REQUIRED)
 target_link_libraries(my_target PRIVATE FlickPhysics::PortableCore)
 ```
 
@@ -242,7 +246,7 @@ interface is tested from outside this repository.
 
 ```bash
 python scripts/validate_repository.py
-python scripts/check_release_version.py v0.4.0
+python scripts/check_release_version.py v0.5.0
 python scripts/package_plugin.py --output dist/FlickPhysics-source.zip
 ```
 

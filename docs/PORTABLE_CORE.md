@@ -1,7 +1,7 @@
 # Portable core
 
-The portable core exists so numerical behavior can be compiled, fuzzed by properties,
-benchmarked, and consumed without installing Unreal Engine.
+The portable core exists so numerical behavior can be compiled, property-tested,
+benchmarked, packaged, and consumed without installing Unreal Engine.
 
 ## Launch model
 
@@ -71,14 +71,53 @@ can be verified by evaluating the endpoint.
 This preview model does not attempt to reproduce every Chaos integration detail. Collision,
 substepping, friction, constraints, and solver settings remain host responsibilities.
 
+## Impact model
+
+For source velocity `vs`, target velocity `vt`, and a normalized contact normal `n`, the
+relative velocity is:
+
+```text
+vr = vs - vt
+normalSpeed = abs(dot(vr, n))
+tangentialSpeed = sqrt(max(dot(vr, vr) - normalSpeed², 0))
+```
+
+For positive masses `ms` and `mt`, the reduced mass is:
+
+```text
+mu = (ms * mt) / (ms + mt)
+```
+
+A target mass of zero represents an immovable target and resolves `mu` to `ms`. The core
+then derives:
+
+```text
+directionalMomentum = mu * normalSpeed
+normalEnergy = 0.5 * mu * normalSpeed²
+```
+
+The contact-normal sign does not change these scalar metrics. Response evaluation applies
+independent dead zones and ranges, combines non-negative weighted metrics, and maps the
+result through the same response-curve family used by launch input.
+
+Causal attribution is represented by stable host-defined IDs rather than engine pointers.
+The provenance record preserves a root body and action while recording the immediate source,
+current carrier, generation, and bounded chain depth. Source selection compares
+mass-weighted velocity toward the other body and rejects missing, malformed, conflicting,
+or ambiguous evidence instead of guessing.
+
+See [Impact metrics and causal attribution](IMPACT_ATTRIBUTION.md) for the full contract.
+
 ## Numerical policy
 
 - inputs are checked for finite values
-- invalid normals fall back to the conventional up normal where documented
+- invalid normals fall back or fail according to the documented contract
 - ranges are clamped or rejected explicitly
 - portable public functions do not throw
 - the core performs no dynamic allocation
 - packet fields have fixed widths and byte order
+- impact provenance uses stable integer identifiers and a configurable depth cap
+- ambiguous or conflicting impact attribution fails closed
 
 Floating-point output is not advertised as bitwise lockstep across every architecture or
 compiler. The quantized packet provides a stable fixed-width representation after values
@@ -86,9 +125,16 @@ have been quantized.
 
 ## Tests
 
-Focused regression tests cover boundaries and known equations. A seeded 50,000-case
-property test checks invariants such as finite output, power bounds, maximum drag, unit
-launch direction, and launch-plane orthogonality.
+Focused regression tests cover boundaries and known equations. Fixed-seed property suites
+exercise:
+
+- 50,000 launch cases for finite output, power bounds, maximum drag, unit direction, and
+  launch-plane orthogonality
+- 10,000 lifecycle sequences for valid transitions, bounded telemetry, timeout, and stable
+  completion invariants
+- 10,000 impact pairs for argument-order symmetry, contact-normal reversal symmetry,
+  reduced-mass symmetry, stable rejection reasons, and bounded response values
 
 Linux CI runs the suite with AddressSanitizer and UndefinedBehaviorSanitizer. The same test
-binary is also compiled on Windows and macOS.
+binary is also compiled on Windows and macOS, installed as a CMake package, and consumed by
+a separate external project.

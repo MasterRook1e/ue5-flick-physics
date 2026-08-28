@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(FlickPhysicsPortableCore VERSION 0.4.0 LANGUAGES CXX)
+project(FlickPhysicsPortableCore VERSION 0.5.0 LANGUAGES CXX)
 
 option(FLICK_PHYSICS_BUILD_TESTS "Build portable-core tests" ON)
 option(FLICK_PHYSICS_BUILD_EXAMPLES "Build portable examples" ON)

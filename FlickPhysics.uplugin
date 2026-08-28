@@ -1,9 +1,9 @@
 {
   "FileVersion": 3,
-  "Version": 4,
-  "VersionName": "0.4.0",
+  "Version": 5,
+  "VersionName": "0.5.0",
   "FriendlyName": "Flick Physics",
-  "Description": "Game-agnostic drag-to-launch, trajectory prediction, replay quantization, lifecycle telemetry, and stable-motion utilities for Unreal Engine 5.",
+  "Description": "Game-agnostic drag-to-launch, trajectory, replay, lifecycle, impact-metric, and causal-attribution utilities for Unreal Engine 5.",
   "Category": "Physics",
   "CreatedBy": "MasterRook1e",
   "CanContainContent": false,

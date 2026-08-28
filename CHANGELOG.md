@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+- Establish public Unreal Engine build and Automation Test evidence.
+- Add an original minimal host-project integration fixture and visual demonstration.
+
+## 0.5.0
+
 - Added deterministic impact metrics for relative normal/tangential speed, alignment,
   reduced mass, directional momentum, normal kinetic energy, and supplied impulse.
 - Added configurable dead zones, normalization ranges, weighted response curves, and
@@ -14,8 +19,8 @@ All notable changes to this project are documented here.
 - Added focused impact regressions plus 10,000 fixed-seed symmetry and bounded-output cases.
 - Added installed-package, CLI, benchmark, architecture, and integration evidence for the
   new portable impact contracts.
-- Establish public Unreal Engine build and Automation Test evidence.
-- Add an original minimal host-project integration fixture and visual demonstration.
+- Added a gated GitHub release workflow with deterministic source archives, SHA-256
+  checksums, and build provenance.
 
 ## 0.4.0
 
