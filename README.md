@@ -8,16 +8,17 @@ A source-only Unreal Engine 5 C++ plugin and header-only C++17 library for
 **drag-to-launch / flick interactions**.
 
 Flick Physics turns a world-space pointer drag into a validated launch command, then
-provides the geometry, trajectory, replay-packet, stable-motion, lifecycle, impact-metric,
-and causal-attribution utilities commonly needed around that interaction. The numerical
-kernel is compiled and tested without Unreal Engine; the UE module exposes established
-contracts through `FVector`, reflected structs, Blueprint functions, and reusable actor
-components.
+provides geometry, trajectory, replay-packet, stable-motion, lifecycle, view-relative
+facing, impact-metric, and causal-attribution utilities commonly needed around that
+interaction. The numerical kernel is compiled and tested without Unreal Engine; the UE
+module exposes established contracts through `FVector`, reflected structs, Blueprint
+functions, and reusable actor components.
 
-> **Project status:** `0.5.0` alpha source release. Portable-core builds and tests are
-> automated across Linux, Windows, and macOS. Unreal Automation Tests are included, but
-> this repository does not claim a named Unreal Engine version as verified until a public
-> `BuildPlugin` record is added to the compatibility matrix.
+> **Project status:** `0.5.0` alpha source release with an unreleased portable facing
+> addition on `main`. Portable-core builds and tests are automated across Linux, Windows,
+> and macOS. Unreal Automation Tests are included, but this repository does not claim a
+> named Unreal Engine version as verified until a public `BuildPlugin` record is added to
+> the compatibility matrix.
 
 ## What is included
 
@@ -60,6 +61,19 @@ cross-platform lockstep guarantee. See [the wire-format document](docs/WIRE_FORM
 
 See [the lifecycle contract](docs/LIFECYCLE.md).
 
+### View-relative eight-direction facing
+
+- `Forward`, diagonal, side, and back octants resolved from a world-space direction
+- arbitrary facing plane and projected view-forward frame
+- deterministic half-open `45°` sector ownership
+- configurable low-motion previous-direction hold
+- bounded angular hysteresis for stable sprite or presentation selection
+- explicit resolved, low-motion hold, hysteresis hold, no-direction, and invalid statuses
+- direction-to-unit-vector reconstruction for integration and diagnostics
+
+The facing layer does not choose sprites, animation states, mirroring rules, camera policy,
+or asset paths. See [the facing contract](docs/FACING.md).
+
 ### Impact metrics and causal attribution
 
 - relative, normal, and tangential contact speed
@@ -80,8 +94,9 @@ The impact layer does not apply damage or decide ownership. See
 
 - one header-only C++17 core with no Unreal dependency and no dynamic allocation
 - Unreal wrappers delegate to that same tested core instead of duplicating formulas
-- 50,000-case launch property test, 10,000 seeded lifecycle sequences, and 10,000 impact pairs
-- focused regression tests for numerical, lifecycle, provenance, and attribution edge cases
+- 50,000-case launch property test, 10,000 seeded lifecycle sequences, 10,000 impact pairs,
+  and 20,000 facing cases
+- focused regression tests for numerical, lifecycle, facing, provenance, and attribution edge cases
 - AddressSanitizer and UndefinedBehaviorSanitizer on Linux CI
 - CMake package install and external-consumer smoke test
 - CodeQL analysis, public-boundary validation, and deterministic source packaging
@@ -178,8 +193,8 @@ simulating `UPrimitiveComponent`. `UFlickPhysicsLifecycleComponent` observes a l
 body and exposes generic transition events. Neither component decides ownership, turns,
 actions, damage, cooldowns, or other host policy.
 
-Impact attribution remains portable-first. Reflected Unreal wrappers remain an explicit
-follow-up until they have public engine-build evidence.
+Impact attribution and view-relative facing remain portable-first. Reflected Unreal
+wrappers remain explicit follow-ups until they have public engine-build evidence.
 
 ## Use the portable C++17 core
 
@@ -197,6 +212,16 @@ const flickphysics::LaunchResult launch = flickphysics::CalculateLaunch(
 
 flickphysics::LifecycleUpdate lifecycle =
     flickphysics::BeginLifecycle({0.0, 0.0, 0.0});
+
+flickphysics::FacingSettings facingSettings;
+facingSettings.ViewForward = {0.0, 1.0, 0.0};
+facingSettings.HoldBelowMagnitude = 2.0;
+
+const auto facing = flickphysics::ResolveFacing8(
+    velocity,
+    facingSettings,
+    previousFacing,
+    hasPreviousFacing);
 
 flickphysics::ImpactMetricsInput impactInput;
 impactInput.SourceVelocity = {900.0, 0.0, 0.0};
