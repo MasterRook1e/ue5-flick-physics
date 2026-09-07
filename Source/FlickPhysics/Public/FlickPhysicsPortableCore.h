@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Portable/FlickPhysicsCommand.h"
+#include "Portable/FlickPhysicsFacing.h"
 #include "Portable/FlickPhysicsGeometry.h"
 #include "Portable/FlickPhysicsImpact.h"
 #include "Portable/FlickPhysicsLaunch.h"
