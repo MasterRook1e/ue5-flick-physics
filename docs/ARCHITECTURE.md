@@ -14,6 +14,7 @@ The core owns:
 - vector normalization, projection, plane-basis construction, and magnitude clamping
 - drag-to-launch validation and response curves
 - direction snapping on an arbitrary plane
+- view-relative eight-direction facing, deterministic sector ownership, and hysteresis
 - ray/plane intersection
 - damped and undamped analytical trajectory evaluation
 - inverse initial-velocity solving for a fixed arrival time
@@ -25,8 +26,9 @@ The core owns:
 - stable causal provenance, bounded transfer, pair keys, and fail-closed source selection
 
 The core does not own allocation, input polling, collision queries, actors, worlds,
-rendering, replication, damage, teams, scoring, or other gameplay policy. Public functions
-are `noexcept`, return explicit validity/status data, and reject non-finite input.
+rendering, replication, animation assets, camera policy, damage, teams, scoring, or other
+gameplay policy. Public functions are `noexcept`, return explicit validity/status data, and
+reject non-finite input.
 
 ## Layer 2: Unreal adapter and reflected API
 
@@ -41,8 +43,8 @@ The adapter layer owns:
 - Automation Tests for the reflected interface
 
 Thin wrappers are deliberate. Repository validation checks that established wrappers call
-the portable core so formulas cannot silently diverge. Impact attribution remains
-portable-first until a reflected wrapper has public engine-build evidence.
+the portable core so formulas cannot silently diverge. Impact attribution and facing remain
+portable-first until reflected wrappers have public engine-build evidence.
 
 ## Layer 3: stateful engine components
 
@@ -54,8 +56,9 @@ group. It emits generic launched, moving, settling, resumed, settled, timeout, a
 events. It can optionally apply velocity caps or sleep a stably settled body, but these
 mutations are disabled by default.
 
-Neither component contains ownership, selection, turn, combat, cooldown, scoring, or
-content rules. A host decides when the components may be used and what each event means.
+Neither component contains ownership, selection, turn, combat, cooldown, scoring, content,
+character-presentation, or asset-selection rules. A host decides when the components may
+be used and what each event means.
 
 ## Data flow
 
@@ -75,6 +78,8 @@ initial velocity ── EvaluateTrajectory ── preview points + velocities
 start + target ─── SolveInitialVelocity ── velocity for fixed arrival duration
 physics velocities ── AdvanceMotion ───── clamped velocities + transition flags
 
+world direction + view frame ── ResolveFacing8 ── stable view-relative octant/status
+
 body samples + contact normal ── BuildImpactMetrics ── speed/momentum/energy evidence
 impact evidence + policy-free ranges ── EvaluateImpactResponse ── bounded response scale
 body provenance + directional motion ── SelectImpactSource ── source/target or rejection
@@ -83,11 +88,11 @@ body provenance + directional motion ── SelectImpactSource ── source/tar
 ## Verification layers
 
 1. `scripts/validate_repository.py` checks repository boundaries, metadata, secrets,
-   generated-header ordering, versions, and established adapter delegation.
+   generated-header ordering, versions, portable contracts, and established adapter delegation.
 2. CMake compiles the portable tests, CLI, and benchmark with strict warnings.
 3. Linux CI adds AddressSanitizer and UndefinedBehaviorSanitizer.
 4. CMake installs an exported package and a separate consumer project finds and links it.
-5. Fixed-seed property suites exercise launch, lifecycle, and impact invariants.
+5. Fixed-seed property suites exercise launch, lifecycle, impact, and facing invariants.
 6. CodeQL analyzes the compiled C++ path.
 7. The release workflow repeats the source gate, packages identical source archives,
    publishes a checksum, and creates build provenance.
@@ -102,4 +107,5 @@ particular engine build accepted the module. That evidence is recorded separatel
 A proposed feature belongs in the portable core when it is deterministic numerical logic
 with no engine or product dependency. It belongs in the Unreal adapter when it is only a
 type conversion or reflection surface. It belongs in a host project when it requires
-content, world policy, collision policy, camera policy, damage policy, or game rules.
+content, world policy, collision policy, camera policy, animation/asset policy, damage
+policy, or game rules.
