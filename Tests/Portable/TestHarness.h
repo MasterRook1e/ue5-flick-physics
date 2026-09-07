@@ -46,6 +46,8 @@ void TestLifecycle();
 void TestLifecycleProperties();
 void TestImpact();
 void TestImpactProperties();
+void TestFacing();
+void TestFacingProperties();
 void TestProperties();
 void TestInvalidInputs();
 } // namespace flickphysics::tests

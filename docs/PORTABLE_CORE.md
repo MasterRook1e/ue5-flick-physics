@@ -71,6 +71,37 @@ can be verified by evaluating the endpoint.
 This preview model does not attempt to reproduce every Chaos integration detail. Collision,
 substepping, friction, constraints, and solver settings remain host responsibilities.
 
+## View-relative facing model
+
+Facing uses a host-supplied plane normal `n` and view-forward vector `f`. The view forward
+is projected onto the plane and normalized. View right is then derived as:
+
+```text
+r = normalize(cross(f, n))
+```
+
+For a non-zero projected world direction `d`, the signed view-relative angle is:
+
+```text
+angle = atan2(dot(d, r), dot(d, f))
+```
+
+The angle is quantized into eight `45°` sectors centered on Forward, ForwardRight, Right,
+BackRight, Back, BackLeft, Left, and ForwardLeft. Exact half-sector boundaries have stable,
+half-open ownership so replayed inputs do not depend on incidental branch order.
+
+When a previous direction is supplied, the resolver can preserve it for low projected
+magnitudes. It can also apply angular hysteresis only when ordinary quantization would
+switch sectors. The default `6°` band retains the previous sector until the input moves
+beyond `22.5° + 6°` from the previous center. The configured hysteresis is bounded to
+`[0°, 22.5°]`.
+
+A zero projected direction with no history reports `NoDirection`; invalid or non-finite
+frames fail closed. The portable layer returns an octant and status only. Sprite, flipbook,
+mirroring, camera, character, and asset policy remain host responsibilities.
+
+See [View-relative eight-direction facing](FACING.md) for the complete contract.
+
 ## Impact model
 
 For source velocity `vs`, target velocity `vt`, and a normalized contact normal `n`, the
@@ -116,6 +147,7 @@ See [Impact metrics and causal attribution](IMPACT_ATTRIBUTION.md) for the full 
 - portable public functions do not throw
 - the core performs no dynamic allocation
 - packet fields have fixed widths and byte order
+- facing uses explicit history, thresholds, and deterministic sector ownership
 - impact provenance uses stable integer identifiers and a configurable depth cap
 - ambiguous or conflicting impact attribution fails closed
 
@@ -134,7 +166,9 @@ exercise:
   completion invariants
 - 10,000 impact pairs for argument-order symmetry, contact-normal reversal symmetry,
   reduced-mass symmetry, stable rejection reasons, and bounded response values
+- 20,000 facing cases for positive-scale invariance, normalized planar output, sector
+  bounds, reconstructed center-vector planarity, and previous-direction stability
 
 Linux CI runs the suite with AddressSanitizer and UndefinedBehaviorSanitizer. The same test
 binary is also compiled on Windows and macOS, installed as a CMake package, and consumed by
-a separate external project.
+a separate external project that exercises the launch, facing, and impact public APIs.

@@ -38,6 +38,8 @@ if(FLICK_PHYSICS_BUILD_TESTS)
     add_executable(
         flick_physics_portable_tests
         Tests/Portable/CommandTests.cpp
+        Tests/Portable/FacingPropertyTests.cpp
+        Tests/Portable/FacingTests.cpp
         Tests/Portable/GeometryTests.cpp
         Tests/Portable/ImpactPropertyTests.cpp
         Tests/Portable/ImpactTests.cpp

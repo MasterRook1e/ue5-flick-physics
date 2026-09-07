@@ -14,6 +14,13 @@ int main()
         {-50.0, 0.0, 0.0},
         LaunchSettings);
 
+    flickphysics::FacingSettings FacingSettings;
+    FacingSettings.ViewForward = {0.0, 1.0, 0.0};
+    FacingSettings.HysteresisDegrees = 6.0;
+    const flickphysics::FacingResult Facing = flickphysics::ResolveFacing8(
+        {1.0, 1.0, 0.0},
+        FacingSettings);
+
     flickphysics::ImpactMetricsInput ImpactInput;
     ImpactInput.SourceVelocity = {500.0, 0.0, 0.0};
     ImpactInput.TargetVelocity = {};
@@ -30,6 +37,8 @@ int main()
         flickphysics::MakeImpactPairKey(1, 2);
 
     return Launch.IsValid() &&
+            Facing.Valid &&
+            Facing.Direction == flickphysics::FacingDirection8::ForwardRight &&
             Impact.IsValid() &&
             Response.IsValid() &&
             Pair.IsValid()
