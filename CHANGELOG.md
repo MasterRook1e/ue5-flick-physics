@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+- Added a deterministic view-relative eight-direction facing resolver to the portable core.
+- Added configurable low-motion hold and bounded angular hysteresis for stable presentation.
+- Added arbitrary-plane view frames, deterministic sector-boundary ownership, and explicit
+  resolved/held/no-direction/invalid statuses.
+- Added focused facing regressions plus 20,000 fixed-seed scale, planarity, and history cases.
+- Added portable-facing integration and behavior documentation without publishing any
+  project-owned sprite, animation, camera, unit, or asset policy.
 - Establish public Unreal Engine build and Automation Test evidence.
 - Add an original minimal host-project integration fixture and visual demonstration.
 
