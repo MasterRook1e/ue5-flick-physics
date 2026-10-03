@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+- Added portable surface-relative motion diagnostics for supplied contact samples: moving-point
+  relative velocity, normal/tangent decomposition, approach/separation speed, and oriented slope.
+- Added explicit invalid-input, degenerate-axis and overflow rejection without physics mutation.
+- Added focused surface regressions, 5,000 seeded invariant cases and installed-consumer coverage.
+  See `docs/SURFACE_MOTION.md` for units, point-velocity and host-policy boundaries.
 - Added a deterministic view-relative eight-direction facing resolver to the portable core.
 - Added configurable low-motion hold and bounded angular hysteresis for stable presentation.
 - Added arbitrary-plane view frames, deterministic sector-boundary ownership, and explicit

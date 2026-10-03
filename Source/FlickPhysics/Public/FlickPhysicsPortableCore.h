@@ -7,5 +7,6 @@
 #include "Portable/FlickPhysicsLaunch.h"
 #include "Portable/FlickPhysicsLifecycle.h"
 #include "Portable/FlickPhysicsMotion.h"
+#include "Portable/FlickPhysicsSurface.h"
 #include "Portable/FlickPhysicsTrajectory.h"
 #include "Portable/FlickPhysicsVector.h"

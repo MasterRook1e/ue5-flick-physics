@@ -54,6 +54,11 @@ if(FLICK_PHYSICS_BUILD_TESTS)
     target_link_libraries(flick_physics_portable_tests PRIVATE FlickPhysics::PortableCore)
     flick_physics_configure_target(flick_physics_portable_tests)
     add_test(NAME FlickPhysicsPortableCore COMMAND flick_physics_portable_tests)
+
+    add_executable(flick_physics_surface_tests Tests/Portable/SurfaceTests.cpp)
+    target_link_libraries(flick_physics_surface_tests PRIVATE FlickPhysics::PortableCore)
+    flick_physics_configure_target(flick_physics_surface_tests)
+    add_test(NAME FlickPhysicsSurfaceMotion COMMAND flick_physics_surface_tests)
 endif()
 
 if(FLICK_PHYSICS_BUILD_EXAMPLES)
