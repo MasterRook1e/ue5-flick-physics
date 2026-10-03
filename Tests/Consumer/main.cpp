@@ -21,6 +21,11 @@ int main()
         {1.0, 1.0, 0.0},
         FacingSettings);
 
+    flickphysics::SurfaceMotionInput SurfaceInput;
+    SurfaceInput.BodyVelocity = {3.0, 0.0, -2.0};
+    SurfaceInput.SurfacePointVelocity = {1.0, 0.0, 0.0};
+    const auto Surface = flickphysics::AnalyzeSurfaceMotion(SurfaceInput);
+
     flickphysics::ImpactMetricsInput ImpactInput;
     ImpactInput.SourceVelocity = {500.0, 0.0, 0.0};
     ImpactInput.TargetVelocity = {};
@@ -39,6 +44,7 @@ int main()
     return Launch.IsValid() &&
             Facing.Valid &&
             Facing.Direction == flickphysics::FacingDirection8::ForwardRight &&
+            Surface.IsValid() && Surface.ClosingSpeed == 2.0 && Surface.TangentSpeed == 2.0 &&
             Impact.IsValid() &&
             Response.IsValid() &&
             Pair.IsValid()
